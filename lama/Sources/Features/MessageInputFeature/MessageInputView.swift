@@ -25,15 +25,25 @@ struct MessageInputView: View {
         isInputFocused = true
       }
       
-      Button {
-        store.send(.sendButtonTapped)
-        isInputFocused = true
-      } label: {
-        Image(systemName: "arrow.up.circle.fill")
-          .font(.title)
-          .foregroundColor(store.isDisabled ? .gray : .blue)
+      if store.isLoading {
+        Button {
+          store.send(.stopButtonTapped)
+        } label: {
+          Image(systemName: "stop.circle.fill")
+            .font(.title)
+            .foregroundColor(.red)
+        }
+      } else {
+        Button {
+          store.send(.sendButtonTapped)
+          isInputFocused = true
+        } label: {
+          Image(systemName: "arrow.up.circle.fill")
+            .font(.title)
+            .foregroundColor(store.isDisabled ? .gray : .blue)
+        }
+        .disabled(store.isDisabled)
       }
-      .disabled(store.isDisabled)
     }
     .padding(.vertical, 12)
     .padding(.horizontal, 24)

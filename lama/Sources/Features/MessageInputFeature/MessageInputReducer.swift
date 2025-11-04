@@ -28,10 +28,12 @@ struct MessageInput {
     case inputTextChanged(String)
     case sendButtonTapped
     case submitButtonTapped
+    case stopButtonTapped
     case delegate(Delegate)
     
     enum Delegate: Equatable {
       case sendMessage
+      case stopGeneration
     }
   }
   
@@ -56,6 +58,11 @@ struct MessageInput {
         }
         return .run { send in
           await send(.delegate(.sendMessage))
+        }
+        
+      case .stopButtonTapped:
+        return .run { send in
+          await send(.delegate(.stopGeneration))
         }
         
       case .delegate:

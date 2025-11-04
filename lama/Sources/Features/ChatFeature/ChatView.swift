@@ -10,7 +10,6 @@ import SwiftUI
 
 struct ChatView: View {
   @Bindable var store: StoreOf<Chat>
-  @State private var isAtBottom: Bool = true
 
   var body: some View {
     VStack(spacing: 0) {
@@ -47,39 +46,37 @@ struct ChatView: View {
                 .frame(height: 1)
                 .id("bottom")
                 .onAppear {
-                  isAtBottom = true
+                  store.send(.bottomAppeared)
                 }
                 .onDisappear {
-                  isAtBottom = false
-                  if !store.isUserScrolling {
-                    store.send(.userDidScroll)
-                  }
+                  store.send(.bottomDisappeared)
                 }
             }
             .padding()
           }
+          .scrollDismissesKeyboard(.interactively)
           .onChange(of: store.messages.count) { oldCount, newCount in
-            if !store.isUserScrolling || isAtBottom {
+            if !store.isUserScrolling || store.isAtBottom {
               withAnimation(.easeOut(duration: 0.3)) {
                 proxy.scrollTo("bottom", anchor: .bottom)
               }
             }
           }
           .onChange(of: store.isLoading) { _, isLoading in
-            if isLoading && (!store.isUserScrolling || isAtBottom) {
+            if isLoading && (!store.isUserScrolling || store.isAtBottom) {
               withAnimation(.easeOut(duration: 0.3)) {
                 proxy.scrollTo("bottom", anchor: .bottom)
               }
             }
           }
           .onChange(of: store.messages.last?.content) { _, _ in
-            if !store.isUserScrolling || isAtBottom {
+            if !store.isUserScrolling || store.isAtBottom {
               proxy.scrollTo("bottom", anchor: .bottom)
             }
           }
 
           // Floating scroll to bottom button
-          if store.isUserScrolling && !isAtBottom {
+          if store.isUserScrolling && !store.isAtBottom {
             Button {
               store.send(.scrollToBottomTapped)
               withAnimation(.easeOut(duration: 0.3)) {
@@ -111,6 +108,9 @@ struct ChatView: View {
     }
     .onAppear {
       store.send(.onAppear)
+    }
+    .onDisappear {
+      store.send(.onDisappear)
     }
   }
 }

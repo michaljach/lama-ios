@@ -12,6 +12,8 @@ import Foundation
 struct Chat {
   @Dependency(\.ollamaService) var ollamaService
   
+  enum ChatStreamingTaskId {}
+  
   @ObservableState
   struct State: Equatable, Identifiable {
     let id: UUID
@@ -23,6 +25,7 @@ struct Chat {
     var messages: IdentifiedArrayOf<Message.State> = []
     var messageInputState = MessageInput.State()
     var isUserScrolling: Bool = false
+    var isAtBottom: Bool = true
 
     init(id: UUID) {
       self.id = id
@@ -53,6 +56,7 @@ struct Chat {
     case messages(IdentifiedActionOf<Message>)
     case messageInput(MessageInput.Action)
     case onAppear
+    case onDisappear
     case modelSelected(String)
     case loadModels
     case modelsLoaded([String])
@@ -60,8 +64,11 @@ struct Chat {
     case streamingResponseReceived(String)
     case streamingComplete
     case streamingError(String)
+    case stopGeneration
     case userDidScroll
     case scrollToBottomTapped
+    case bottomAppeared
+    case bottomDisappeared
   }
   
   var body: some Reducer<State, Action> {
@@ -69,6 +76,13 @@ struct Chat {
       switch action {
       case .onAppear:
         return .send(.loadModels)
+        
+      case .onDisappear:
+        // Stop generation when navigating away
+        if state.isLoading {
+          return .send(.stopGeneration)
+        }
+        return .none
 
       case .loadModels:
         state.isLoadingModels = true
@@ -145,6 +159,12 @@ struct Chat {
             )
             
             for try await response in stream {
+              // Check if cancellation was requested
+              if Task.isCancelled {
+                await send(.streamingComplete)
+                break
+              }
+              
               if let messageContent = response.message?.content {
                 await send(.streamingResponseReceived(messageContent))
               }
@@ -155,9 +175,15 @@ struct Chat {
               }
             }
           } catch {
-            await send(.streamingError(error.localizedDescription))
+            // Only send error if not cancelled
+            if !Task.isCancelled {
+              await send(.streamingError(error.localizedDescription))
+            } else {
+              await send(.streamingComplete)
+            }
           }
         }
+        .cancellable(id: ChatStreamingTaskId.self)
         
       case .streamingResponseReceived(let content):
         // Update the last message (assistant message) with streaming content
@@ -184,6 +210,14 @@ struct Chat {
         }
         return .none
         
+      case .stopGeneration:
+        state.isLoading = false
+        state.messageInputState.isLoading = false
+        return .cancel(id: ChatStreamingTaskId.self)
+        
+      case .messageInput(.delegate(.stopGeneration)):
+        return .send(.stopGeneration)
+        
       case .messageInput:
         return .none
 
@@ -196,6 +230,18 @@ struct Chat {
 
       case .scrollToBottomTapped:
         state.isUserScrolling = false
+        state.isAtBottom = true
+        return .none
+
+      case .bottomAppeared:
+        state.isAtBottom = true
+        return .none
+
+      case .bottomDisappeared:
+        state.isAtBottom = false
+        if !state.isUserScrolling {
+          return .send(.userDidScroll)
+        }
         return .none
       }
     }
