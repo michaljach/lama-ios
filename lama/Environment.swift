@@ -15,5 +15,5 @@ extension DependencyValues {
 }
 
 private struct OllamaServiceKey: DependencyKey {
-  static let liveValue = OllamaService()
+  static let liveValue = OllamaService(userDefaultsService: .liveValue)
 }

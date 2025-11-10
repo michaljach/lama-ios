@@ -11,8 +11,11 @@ import Foundation
 @Reducer
 struct Chat {
   @Dependency(\.ollamaService) var ollamaService
+  @Dependency(\.userDefaultsService) var userDefaultsService
   
-  enum ChatStreamingTaskId {}
+  nonisolated enum CancelID: Hashable, Sendable {
+    case streaming
+  }
   
   @ObservableState
   struct State: Equatable, Identifiable {
@@ -27,14 +30,10 @@ struct Chat {
     var isUserScrolling: Bool = false
     var isAtBottom: Bool = true
 
-    init(id: UUID) {
+    init(id: UUID, userDefaultsService: UserDefaultsService = .liveValue) {
       self.id = id
       // Load default model from settings
-      if let savedModel = UserDefaults.standard.string(forKey: "defaultModel"), !savedModel.isEmpty {
-        self.model = savedModel
-      } else {
-        self.model = "gemma3:4b"
-      }
+      self.model = userDefaultsService.getDefaultModel()
     }
 
     /// Computed property for chat title based on first user message
@@ -183,7 +182,7 @@ struct Chat {
             }
           }
         }
-        .cancellable(id: ChatStreamingTaskId.self)
+        .cancellable(id: CancelID.streaming)
         
       case .streamingResponseReceived(let content):
         // Update the last message (assistant message) with streaming content
@@ -213,7 +212,7 @@ struct Chat {
       case .stopGeneration:
         state.isLoading = false
         state.messageInputState.isLoading = false
-        return .cancel(id: ChatStreamingTaskId.self)
+        return .cancel(id: CancelID.streaming)
         
       case .messageInput(.delegate(.stopGeneration)):
         return .send(.stopGeneration)
