@@ -103,6 +103,10 @@ struct ChatView: View {
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .principal) {
+        Text("PrivateGPT")
+      }
+      
+      ToolbarItem(placement: .topBarTrailing) {
         ModelPicker(store: store)
       }
     }

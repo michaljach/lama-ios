@@ -139,6 +139,13 @@ struct Chat {
           ChatMessage(role: message.role, content: message.content)
         }
         
+        // Debug: Print messages being sent to API
+        print("🔵 Sending \(chatMessages.count) messages to API:")
+        for (index, msg) in chatMessages.enumerated() {
+          let preview = msg.content.prefix(50)
+          print("  \(index + 1). [\(msg.role)] \(preview)...")
+        }
+        
         // Create assistant message placeholder for streaming
         let assistantMessageId = UUID()
         let assistantMessage = Message.State(
@@ -195,6 +202,14 @@ struct Chat {
       case .streamingComplete:
         state.isLoading = false
         state.messageInputState.isLoading = false
+        
+        // Debug: Print final state of messages
+        print("✅ Streaming complete. Total messages in state: \(state.messages.count)")
+        for (index, msg) in state.messages.enumerated() {
+          let preview = msg.content.prefix(50)
+          print("  \(index + 1). [\(msg.role)] \(preview)...")
+        }
+        
         return .none
         
       case .streamingError(let errorMessage):

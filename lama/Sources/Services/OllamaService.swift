@@ -26,6 +26,18 @@ actor OllamaService {
     userDefaultsService.getOllamaEndpoint()
   }
   
+  /// Get the authorization token if set
+  private var authToken: String? {
+    userDefaultsService.getAuthToken()
+  }
+  
+  /// Add authorization header to request if token is set
+  private func addAuthorizationHeader(to request: inout URLRequest) {
+    if let token = authToken, !token.isEmpty {
+      request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    }
+  }
+  
   // MARK: - Chat Completion
   
   /// Send a chat message and get a streaming response
@@ -86,17 +98,20 @@ actor OllamaService {
   ///   - model: The model name to use
   ///   - prompt: The text prompt
   ///   - options: Optional generation options
+  ///   - context: Optional context from previous generation to preserve conversation history
   /// - Returns: AsyncThrowingStream of GenerateResponse chunks
   func generate(
     model: String,
     prompt: String,
-    options: GenerateOptions? = nil
+    options: GenerateOptions? = nil,
+    context: [Int]? = nil
   ) async throws -> AsyncThrowingStream<GenerateResponse, Error> {
     let request = GenerateRequest(
       model: model,
       prompt: prompt,
       stream: true,
-      options: options
+      options: options,
+      context: context
     )
     
     return try await performStreamingRequest(
@@ -112,17 +127,20 @@ actor OllamaService {
   ///   - model: The model name to use
   ///   - prompt: The text prompt
   ///   - options: Optional generation options
+  ///   - context: Optional context from previous generation to preserve conversation history
   /// - Returns: Complete GenerateResponse
   func generateComplete(
     model: String,
     prompt: String,
-    options: GenerateOptions? = nil
+    options: GenerateOptions? = nil,
+    context: [Int]? = nil
   ) async throws -> GenerateResponse {
     let request = GenerateRequest(
       model: model,
       prompt: prompt,
       stream: false,
-      options: options
+      options: options,
+      context: context
     )
     
     return try await performRequest(
@@ -143,6 +161,7 @@ actor OllamaService {
     
     var urlRequest = URLRequest(url: url)
     urlRequest.httpMethod = "GET"
+    addAuthorizationHeader(to: &urlRequest)
     
     do {
       let (data, response) = try await urlSession.data(for: urlRequest)
@@ -192,6 +211,7 @@ actor OllamaService {
     var urlRequest = URLRequest(url: url)
     urlRequest.httpMethod = "POST"
     urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    addAuthorizationHeader(to: &urlRequest)
     
     do {
       urlRequest.httpBody = try JSONEncoder().encode(request)
@@ -233,6 +253,11 @@ actor OllamaService {
     var urlRequest = URLRequest(url: url)
     urlRequest.httpMethod = "POST"
     urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    
+    // Add authorization header if token is set
+    if let token = authToken, !token.isEmpty {
+      urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    }
     
     do {
       urlRequest.httpBody = try JSONEncoder().encode(request)

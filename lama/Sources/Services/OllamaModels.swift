@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Request Models
 
-struct ChatRequest: Codable {
+struct ChatRequest {
   let model: String
   let messages: [ChatMessage]
   let stream: Bool
@@ -23,29 +23,39 @@ struct ChatRequest: Codable {
   }
 }
 
-struct GenerateRequest: Codable {
+nonisolated extension ChatRequest: Codable {}
+
+struct GenerateRequest {
   let model: String
   let prompt: String
   let stream: Bool
   let options: GenerateOptions?
+  let context: [Int]?
   
   enum CodingKeys: String, CodingKey {
     case model
     case prompt
     case stream
     case options
+    case context
   }
 }
 
-struct ShowModelRequest: Codable {
+nonisolated extension GenerateRequest: Codable {}
+
+struct ShowModelRequest {
   let name: String
 }
 
-struct EmptyRequest: Codable {}
+nonisolated extension ShowModelRequest: Codable {}
+
+struct EmptyRequest {}
+
+nonisolated extension EmptyRequest: Codable {}
 
 // MARK: - Response Models
 
-struct ChatResponse: Codable {
+struct ChatResponse {
   let model: String?
   let createdAt: String?
   let message: ChatMessage?
@@ -71,11 +81,14 @@ struct ChatResponse: Codable {
   }
 }
 
-struct GenerateResponse: Codable {
+nonisolated extension ChatResponse: Codable {}
+
+struct GenerateResponse {
   let model: String?
   let createdAt: String?
   let response: String?
   let done: Bool?
+  let context: [Int]?
   let totalDuration: Int64?
   let loadDuration: Int64?
   let promptEvalCount: Int?
@@ -88,6 +101,7 @@ struct GenerateResponse: Codable {
     case createdAt = "created_at"
     case response
     case done
+    case context
     case totalDuration = "total_duration"
     case loadDuration = "load_duration"
     case promptEvalCount = "prompt_eval_count"
@@ -97,11 +111,15 @@ struct GenerateResponse: Codable {
   }
 }
 
-struct ListModelsResponse: Codable {
+nonisolated extension GenerateResponse: Codable {}
+
+struct ListModelsResponse {
   let models: [ModelInfo]
 }
 
-struct ShowModelResponse: Codable {
+nonisolated extension ListModelsResponse: Codable {}
+
+struct ShowModelResponse {
   let modelfile: String
   let parameters: String
   let template: String
@@ -110,7 +128,9 @@ struct ShowModelResponse: Codable {
   let license: String?
 }
 
-struct ModelInfo: Codable {
+nonisolated extension ShowModelResponse: Codable {}
+
+struct ModelInfo {
   let name: String
   let modifiedAt: String
   let size: Int64
@@ -126,7 +146,9 @@ struct ModelInfo: Codable {
   }
 }
 
-struct ModelDetails: Codable {
+nonisolated extension ModelInfo: Codable {}
+
+struct ModelDetails {
   let parentModel: String?
   let format: String?
   let family: String?
@@ -142,20 +164,26 @@ struct ModelDetails: Codable {
   }
 }
 
-struct ChatMessage: Codable {
+nonisolated extension ModelDetails: Codable {}
+
+struct ChatMessage {
   let role: MessageRole
   let content: String
 }
 
-enum MessageRole: String, Codable {
+nonisolated extension ChatMessage: Codable {}
+
+enum MessageRole: String {
   case system
   case user
   case assistant
 }
 
+nonisolated extension MessageRole: Codable {}
+
 // MARK: - Options
 
-struct ChatOptions: Codable {
+struct ChatOptions {
   let temperature: Double?
   let topP: Double?
   let topK: Int?
@@ -185,7 +213,9 @@ struct ChatOptions: Codable {
   }
 }
 
-struct GenerateOptions: Codable {
+nonisolated extension ChatOptions: Codable {}
+
+struct GenerateOptions {
   let temperature: Double?
   let topP: Double?
   let topK: Int?
@@ -214,12 +244,16 @@ struct GenerateOptions: Codable {
     self.seed = seed
   }
 }
+
+nonisolated extension GenerateOptions: Codable {}
 
 // MARK: - Error Models
 
-struct OllamaErrorResponse: Codable {
+struct OllamaErrorResponse {
   let error: String
 }
+
+nonisolated extension OllamaErrorResponse: Codable {}
 
 // MARK: - Errors
 

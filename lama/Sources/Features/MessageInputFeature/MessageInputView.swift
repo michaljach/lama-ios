@@ -17,12 +17,12 @@ struct MessageInputView: View {
       TextField("Type a message...", text: Binding(
         get: { store.inputText },
         set: { store.send(.inputTextChanged($0)) }
-      ), axis: .vertical)
-      .lineLimit(1...5)
+      ))
       .focused($isInputFocused)
+      .submitLabel(.send)
       .onSubmit {
         store.send(.submitButtonTapped)
-        isInputFocused = true
+        isInputFocused = false
       }
       
       if store.isLoading {
@@ -36,7 +36,7 @@ struct MessageInputView: View {
       } else {
         Button {
           store.send(.sendButtonTapped)
-          isInputFocused = true
+          isInputFocused = false
         } label: {
           Image(systemName: "arrow.up.circle.fill")
             .font(.title)

@@ -20,10 +20,11 @@ struct UserDefaultsService {
   
   // Default values
   private enum Defaults {
-    static let ollamaEndpoint = "http://192.168.68.54:11434"
-    static let defaultModel = "gemma3:4b"
+    static let ollamaEndpoint = "https://ollama.com"
+    static let defaultModel = "gpt-oss:120b"
     static let temperature = 0.7
     static let maxTokens = 2048
+    static let authToken = "760999c692364c0a843c1fbc5d6f491b.c_EfP3NyyWUpPGI3OYjqNr9S"
   }
   
   var getOllamaEndpoint: @Sendable () -> String
@@ -37,6 +38,8 @@ struct UserDefaultsService {
   
   var getMaxTokens: @Sendable () -> Int
   var setMaxTokens: @Sendable (Int) -> Void
+  
+  var getAuthToken: @Sendable () -> String?
   
   var resetToDefaults: @Sendable () -> Void
 }
@@ -69,6 +72,9 @@ extension UserDefaultsService: DependencyKey {
     setMaxTokens: { value in
       UserDefaults.standard.set(value, forKey: Keys.maxTokens)
     },
+    getAuthToken: {
+      Defaults.authToken
+    },
     resetToDefaults: {
       UserDefaults.standard.set(Defaults.ollamaEndpoint, forKey: Keys.ollamaEndpoint)
       UserDefaults.standard.set(Defaults.defaultModel, forKey: Keys.defaultModel)
@@ -86,6 +92,7 @@ extension UserDefaultsService: DependencyKey {
     setTemperature: { _ in },
     getMaxTokens: { Defaults.maxTokens },
     setMaxTokens: { _ in },
+    getAuthToken: { Defaults.authToken },
     resetToDefaults: { }
   )
 }

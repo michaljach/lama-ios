@@ -35,7 +35,6 @@ struct ModelPicker: View {
         }
       } label: {
         HStack(spacing: 4) {
-          Image(systemName: "cpu")
           Text(store.model)
             .font(.headline)
           Image(systemName: "chevron.down")

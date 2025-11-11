@@ -13,7 +13,7 @@ struct Settings {
   @Dependency(\.userDefaultsService) var userDefaultsService
   @ObservableState
   struct State: Equatable {
-    var ollamaEndpoint: String = "http://192.168.68.54:11434"
+    var ollamaEndpoint: String = ""
     var defaultModel: String = "gemma3:4b"
     var temperature: Double = 0.7
     var maxTokens: Int = 2048
@@ -59,11 +59,11 @@ struct Settings {
         return .none
 
       case .resetToDefaults:
-        state.ollamaEndpoint = "http://192.168.68.54:11434"
-        state.defaultModel = "gemma3:4b"
-        state.temperature = 0.7
-        state.maxTokens = 2048
         userDefaultsService.resetToDefaults()
+        state.ollamaEndpoint = userDefaultsService.getOllamaEndpoint()
+        state.defaultModel = userDefaultsService.getDefaultModel()
+        state.temperature = userDefaultsService.getTemperature()
+        state.maxTokens = userDefaultsService.getMaxTokens()
         return .none
       }
     }
