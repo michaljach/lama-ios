@@ -60,6 +60,7 @@ struct ChatResponse {
   let createdAt: String?
   let message: ChatMessage?
   let done: Bool?
+  let doneReason: String?
   let totalDuration: Int64?
   let loadDuration: Int64?
   let promptEvalCount: Int?
@@ -72,6 +73,7 @@ struct ChatResponse {
     case createdAt = "created_at"
     case message
     case done
+    case doneReason = "done_reason"
     case totalDuration = "total_duration"
     case loadDuration = "load_duration"
     case promptEvalCount = "prompt_eval_count"
@@ -88,6 +90,7 @@ struct GenerateResponse {
   let createdAt: String?
   let response: String?
   let done: Bool?
+  let doneReason: String?
   let context: [Int]?
   let totalDuration: Int64?
   let loadDuration: Int64?
@@ -101,6 +104,7 @@ struct GenerateResponse {
     case createdAt = "created_at"
     case response
     case done
+    case doneReason = "done_reason"
     case context
     case totalDuration = "total_duration"
     case loadDuration = "load_duration"

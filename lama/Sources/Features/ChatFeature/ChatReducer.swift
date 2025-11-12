@@ -28,6 +28,8 @@ struct Chat {
     var messages: IdentifiedArrayOf<Message.State> = []
     var messageInputState = MessageInput.State()
     var scrollPosition: String?
+  // Tracks how many times we've auto-continued to finish a cut-off message
+  var autoFinishAttempts: Int = 0
 
     init(id: UUID, userDefaultsService: UserDefaultsService = .liveValue) {
       self.id = id
@@ -60,7 +62,7 @@ struct Chat {
     case modelsLoaded([String])
     case modelsLoadError(String)
     case streamingResponseReceived(String)
-    case streamingComplete
+    case streamingComplete(reason: String?)
     case streamingError(String)
     case stopGeneration
     case scrollPositionChanged(String?)
@@ -109,7 +111,7 @@ struct Chat {
         state.model = model
         return .none
 
-      case .messageInput(.delegate(.sendMessage)):
+  case .messageInput(.delegate(.sendMessage)):
         let inputText = state.messageInputState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !inputText.isEmpty else {
           return .none
@@ -150,7 +152,8 @@ struct Chat {
           content: ""
         )
         state.messages.append(assistantMessage)
-        state.isLoading = true
+  state.isLoading = true
+  state.autoFinishAttempts = 0
         // Force a new scroll event by clearing, then sending an update
         state.scrollPosition = nil
         
@@ -171,14 +174,14 @@ struct Chat {
               )
               for try await response in stream {
                 if Task.isCancelled {
-                  await send(.streamingComplete)
+                  await send(.streamingComplete(reason: nil))
                   break
                 }
                 if let messageContent = response.message?.content {
                   await send(.streamingResponseReceived(messageContent))
                 }
                 if response.done == true {
-                  await send(.streamingComplete)
+                  await send(.streamingComplete(reason: response.doneReason))
                   break
                 }
               }
@@ -186,7 +189,7 @@ struct Chat {
               if !Task.isCancelled {
                 await send(.streamingError(error.localizedDescription))
               } else {
-                await send(.streamingComplete)
+                await send(.streamingComplete(reason: nil))
               }
             }
           }
@@ -207,10 +210,63 @@ struct Chat {
         }
         return .none
         
-      case .streamingComplete:
+      case .streamingComplete(let reason):
+        // Decide if we should auto-continue to finish a sentence or code block
+        if let lastIndex = state.messages.indices.last,
+           state.messages[lastIndex].role == .assistant {
+          let text = state.messages[lastIndex].content
+          let needsMore = Self.needsContinuation(text: text)
+          let hitLength = (reason == "length")
+          if (needsMore || hitLength), state.autoFinishAttempts < 2 {
+            state.autoFinishAttempts += 1
+            // Keep loading indicators during auto-continue
+            state.isLoading = true
+            state.messageInputState.isLoading = true
+            // Prepare messages for a follow-up "continue" without altering visible chat history
+            let baseMessages = state.messages.map { ChatMessage(role: $0.role, content: $0.content) }
+            let continueMessages = baseMessages + [
+              ChatMessage(role: .user, content: "Please continue the previous answer and finish the last sentence or code block.")
+            ]
+            let temperature = userDefaultsService.getTemperature()
+            let maxTokens = userDefaultsService.getMaxTokens()
+            let options = ChatOptions(temperature: temperature, numPredict: maxTokens)
+            return .merge(
+              .send(.scrollPositionChanged("bottom")),
+              .run { [model = state.model] send in
+                do {
+                  let stream = try await ollamaService.chat(
+                    model: model,
+                    messages: continueMessages,
+                    options: options
+                  )
+                  for try await response in stream {
+                    if Task.isCancelled {
+                      await send(.streamingComplete(reason: nil))
+                      break
+                    }
+                    if let messageContent = response.message?.content {
+                      await send(.streamingResponseReceived(messageContent))
+                    }
+                    if response.done == true {
+                      await send(.streamingComplete(reason: response.doneReason))
+                      break
+                    }
+                  }
+                } catch {
+                  if !Task.isCancelled {
+                    await send(.streamingError(error.localizedDescription))
+                  } else {
+                    await send(.streamingComplete(reason: nil))
+                  }
+                }
+              }
+              .cancellable(id: CancelID.streaming)
+            )
+          }
+        }
+        // No auto-continue, finalize loading state
         state.isLoading = false
         state.messageInputState.isLoading = false
-        // Ensure we end at the bottom
         state.scrollPosition = nil
         return .send(.scrollPositionChanged("bottom"))
         
@@ -230,6 +286,7 @@ struct Chat {
       case .stopGeneration:
         state.isLoading = false
         state.messageInputState.isLoading = false
+        state.autoFinishAttempts = 0
         return .cancel(id: CancelID.streaming)
         
       case .messageInput(.delegate(.stopGeneration)):
@@ -253,5 +310,31 @@ struct Chat {
     Scope(state: \.messageInputState, action: \.messageInput) {
       MessageInput()
     }
+  }
+}
+
+// MARK: - Helpers
+
+extension Chat {
+  /// Heuristic to decide if the assistant message likely ended mid-thought
+  static func needsContinuation(text: String) -> Bool {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return false }
+    // If code fences are unbalanced, continue
+    let fenceCount = trimmed.components(separatedBy: "```" ).count - 1
+    if fenceCount % 2 != 0 { return true }
+    // If ends with common sentence terminators, we're good
+    if let last = trimmed.last, "。.!?…\"”’)]>}\n".contains(last) {
+      return false
+    }
+    // If last line seems truncated (no ending punctuation and not a heading or list), continue
+    if let lastLine = trimmed.split(separator: "\n").last {
+      let line = lastLine.trimmingCharacters(in: .whitespaces)
+      // If it's a list/heading or code fence line, don't force continue
+      if line.hasPrefix("#") || line.hasPrefix("-") || line.hasPrefix("*") || line.hasPrefix("`") {
+        return false
+      }
+    }
+    return true
   }
 }
