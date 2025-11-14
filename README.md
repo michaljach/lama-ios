@@ -1,17 +1,20 @@
-# LAMA iOS
+# PGPT (Private GPT) iOS
 
-A modern iOS chat application built with SwiftUI and The Composable Architecture that connects to [Ollama](https://ollama.ai/) for local AI-powered conversations.
+A modern iOS chat application built with SwiftUI and The Composable Architecture that connects to [Ollama](https://ollama.ai/) for AI-powered conversations with web search capabilities.
 
 ## Features
 
 - 💬 **Multiple Chat Conversations** - Create and manage multiple chat sessions
 - 🚀 **Streaming Responses** - Real-time streaming of AI responses as they're generated
-- ⚙️ **Configurable Ollama Endpoint** - Customize your Ollama server connection
+- 🔍 **Web Search Integration** - Built-in web search functionality powered by Ollama
+- ⚙️ **Configurable Settings** - Customize Ollama endpoint, model, temperature, and max tokens
 - 🎯 **Model Selection** - Choose from available Ollama models
-- 🎨 **Modern UI** - Clean, native SwiftUI interface
-- 📱 **iOS Native** - Built specifically for iOS with native SwiftUI components
+- 🔐 **Authentication Support** - Secure API token authentication
+- 🎨 **Modern UI** - Clean, native SwiftUI interface with animated loading indicators
+- 📱 **iOS Native** - Built specifically for iOS 17.0+ with native SwiftUI components
 - 🛑 **Stop Generation** - Ability to stop ongoing AI responses
 - 🔄 **Chat Management** - Create, delete, and navigate between conversations
+- 🌡️ **Advanced Parameters** - Control temperature and token limits for fine-tuned responses
 
 ## Requirements
 
@@ -41,9 +44,17 @@ The Swift Package Manager dependencies will be automatically resolved when you b
 
 ## Setup
 
-### Installing Ollama
+### Using Ollama Cloud or Local Server
 
-Before using the app, you need to have Ollama installed and running:
+The app works with both Ollama's cloud service and local installations:
+
+#### Option 1: Ollama Cloud (Default)
+
+The app comes pre-configured to use Ollama's cloud service at `https://ollama.com` with authentication included. No additional setup is required!
+
+#### Option 2: Local Ollama Server
+
+To use a local Ollama installation:
 
 1. **Install Ollama**:
 
@@ -68,10 +79,15 @@ Before using the app, you need to have Ollama installed and running:
 
 1. Launch the app on your iOS device or simulator
 2. Tap the settings gear icon (⚙️) in the top-left corner
-3. Configure your Ollama endpoint (default: `http://192.168.68.54:11434`)
-4. Select your preferred model from the available models
+3. Configure your preferences:
+   - **Ollama Endpoint**: Set to `https://ollama.com` (default) or your local server URL
+   - **Default Model**: Choose your preferred model (default: `gpt-oss:120b`)
+   - **Temperature**: Adjust response creativity (0.0 - 1.0, default: 0.7)
+   - **Max Tokens**: Set maximum response length (default: 640)
+   - **Web Search**: Enable/disable web search functionality (default: enabled)
+4. Select your preferred model from the model picker when creating a new chat
 
-**Note**: If running on a simulator, make sure your Ollama server is accessible from the simulator's network. You may need to use your Mac's IP address instead of `localhost`.
+**Note**: If running on a simulator with a local Ollama server, make sure your Ollama server is accessible from the simulator's network. You may need to use your Mac's IP address instead of `localhost`.
 
 ## Usage
 
@@ -108,33 +124,42 @@ This project is built using **The Composable Architecture (TCA)**, a powerful st
 lama/
 ├── Sources/
 │   ├── Features/
-│   │   ├── ChatFeature/          # Individual chat conversation
+│   │   ├── ChatFeature/           # Individual chat conversation
 │   │   ├── ChatListFeature/       # List of all chats
 │   │   ├── MessageFeature/        # Individual message display
 │   │   ├── MessageInputFeature/   # Message input component
 │   │   └── SettingsFeature/       # App settings and configuration
 │   ├── Services/
-│   │   ├── OllamaService.swift    # Ollama API client
-│   │   └── OllamaModels.swift     # Ollama data models
+│   │   ├── OllamaService.swift    # Ollama API client with streaming support
+│   │   ├── OllamaModels.swift     # Ollama data models and types
+│   │   └── UserDefaultsService.swift  # User preferences management
 │   └── Components/
-│       ├── ModelPicker.swift      # Model selection component
-│       └── NoChatsMessage.swift   # Empty state component
-├── Environment.swift              # Dependency injection setup
-└── lamaApp.swift                  # App entry point
+│       ├── ModelPicker.swift       # Model selection component
+│       ├── NoChatsMessage.swift    # Empty state component
+│       └── LoadingIndicatorView.swift  # Animated loading indicator
+├── Environment.swift               # Dependency injection setup
+└── lamaApp.swift                   # App entry point
 ```
 
 ### Key Components
 
-- **OllamaService**: Actor-based service for communicating with the Ollama API, supporting both streaming and non-streaming requests
+- **OllamaService**: Actor-based service for communicating with the Ollama API, supporting:
+  - Streaming and non-streaming chat completions
+  - Text generation with context preservation
+  - Model listing and information retrieval
+  - Web search integration via Ollama's web search API
+  - Bearer token authentication for secure API access
+- **UserDefaultsService**: Manages user preferences including endpoint, model selection, temperature, max tokens, and web search settings
 - **Feature Modules**: Each feature (Chat, ChatList, Settings, etc.) contains its own reducer and view following TCA patterns
-- **Dependency Injection**: Uses TCA's dependency system for testability
+- **Dependency Injection**: Uses TCA's dependency system for testability and modularity
 
 ## Technologies
 
-- **SwiftUI** - Modern declarative UI framework
+- **SwiftUI** - Modern declarative UI framework for iOS 17.0+
 - **The Composable Architecture** - State management and architecture framework
-- **Swift Concurrency** - Async/await for asynchronous operations
-- **Ollama API** - Local AI model inference
+- **Swift Concurrency** - Async/await for asynchronous operations and actor-based services
+- **Ollama API** - AI model inference with support for both cloud and local servers
+- **Ollama Web Search API** - Integrated web search capabilities
 
 ## Development
 
@@ -156,6 +181,10 @@ xcodebuild -project lama.xcodeproj -scheme lama -sdk iphonesimulator
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Repository
+
+This project is hosted at: [https://github.com/michaljach/lama-ios](https://github.com/michaljach/lama-ios)
 
 ## License
 
