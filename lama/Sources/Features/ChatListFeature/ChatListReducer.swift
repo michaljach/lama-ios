@@ -65,7 +65,7 @@ struct ChatList {
       case .newChatButtonTapped:
         let newChatId = UUID()
         let newChatItem = Chat.State(id: newChatId)
-        state.chats.append(newChatItem)
+        state.chats.insert(newChatItem, at: 0)
         state.path.append(.chat(newChatItem))
         return .none
 
