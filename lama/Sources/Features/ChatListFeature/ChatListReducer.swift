@@ -49,9 +49,12 @@ struct ChatList {
         return .none
 
       case .removeEmptyChats:
-        // Remove chats with no messages
+        // Remove chats with no visible messages (excluding tool messages)
         state.chats.removeAll { chat in
-          chat.messages.isEmpty
+          let visibleMessages = chat.messages.filter { message in
+            message.role != .tool
+          }
+          return visibleMessages.isEmpty
         }
         return .none
 

@@ -17,6 +17,12 @@ struct Chat {
     case streaming
   }
   
+  enum LoadingState: Equatable {
+    case idle
+    case loading
+    case searchingWeb
+  }
+  
   @ObservableState
   struct State: Equatable, Identifiable {
     let id: UUID
@@ -24,17 +30,20 @@ struct Chat {
     var availableModels: [String] = []
     var isLoadingModels: Bool = false
     var errorMessage: String?
-    var isLoading: Bool = false
+    var loadingState: LoadingState = .idle
     var messages: IdentifiedArrayOf<Message.State> = []
+    var visibleMessages: IdentifiedArrayOf<Message.State> {
+      self.messages.filter({ [.assistant, .system, .user].contains($0.role) })
+    }
     var messageInputState = MessageInput.State()
     var scrollPosition: String?
-
+    
     init(id: UUID, userDefaultsService: UserDefaultsService = .liveValue) {
       self.id = id
       // Load default model from settings
       self.model = userDefaultsService.getDefaultModel()
     }
-
+    
     /// Computed property for chat title based on first user message
     var title: String {
       // Find the first user message
@@ -49,7 +58,7 @@ struct Chat {
       return "New Chat"
     }
   }
-
+  
   enum Action {
     case messages(IdentifiedActionOf<Message>)
     case messageInput(MessageInput.Action)
@@ -59,9 +68,13 @@ struct Chat {
     case loadModels
     case modelsLoaded([String])
     case modelsLoadError(String)
+    case startChatStream([ChatMessage])
     case streamingResponseReceived(String)
     case streamingComplete(reason: String?)
     case streamingError(String)
+    case toolCallsReceived([ToolCall])
+    case executeToolCalls([ToolCall])
+    case toolCallCompleted(String, String) // toolName, result
     case stopGeneration
     case scrollPositionChanged(String?)
   }
@@ -74,11 +87,11 @@ struct Chat {
         
       case .onDisappear:
         // Stop generation when navigating away
-        if state.isLoading {
+        if state.loadingState != .idle {
           return .send(.stopGeneration)
         }
         return .none
-
+        
       case .loadModels:
         state.isLoadingModels = true
         return .run { send in
@@ -90,7 +103,7 @@ struct Chat {
             await send(.modelsLoadError(error.localizedDescription))
           }
         }
-
+        
       case .modelsLoaded(let models):
         state.isLoadingModels = false
         state.availableModels = models
@@ -99,27 +112,28 @@ struct Chat {
           state.model = models[0]
         }
         return .none
-
-      case .modelsLoadError(let error):
+        
+      case .modelsLoadError:
         state.isLoadingModels = false
         // Silently fail - keep the default model
         return .none
-
+        
       case .modelSelected(let model):
         state.model = model
         return .none
-
-  case .messageInput(.delegate(.sendMessage)):
+        
+      case .messageInput(.delegate(.sendMessage)):
         let inputText = state.messageInputState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !inputText.isEmpty else {
           return .none
         }
-
-        // Clear input
+        
+        // Clear input and show loading
         state.messageInputState.inputText = ""
-        state.messageInputState.isLoading = true
         state.errorMessage = nil
-
+        state.loadingState = .loading
+        state.messageInputState.isLoading = true
+        
         // Add user message
         let userMessageId = UUID()
         let userMessage = Message.State(
@@ -128,98 +142,163 @@ struct Chat {
           content: inputText
         )
         state.messages.append(userMessage)
-        
+
         // Convert existing messages (including the user message we just added) to ChatMessage format for Ollama
         let chatMessages = state.messages.map { message in
           ChatMessage(role: message.role, content: message.content)
         }
-        
-        // Create assistant message placeholder for streaming
-        let assistantMessageId = UUID()
-        let assistantMessage = Message.State(
-          id: assistantMessageId,
-          role: .assistant,
-          content: ""
-        )
-        state.messages.append(assistantMessage)
-  state.isLoading = true
+
         // Force a new scroll event by clearing, then sending an update
         state.scrollPosition = nil
         
-        // Also trigger scroll to bottom right after appending the assistant placeholder
-        // Prepare generation options from settings
+        return .merge(
+          .send(.scrollPositionChanged("bottom")),
+          .send(.startChatStream(chatMessages))
+        )
+        
+      case .startChatStream(let chatMessages):
         let temperature = userDefaultsService.getTemperature()
         let maxTokens = userDefaultsService.getMaxTokens()
         let options = ChatOptions(temperature: temperature, numPredict: maxTokens)
-
-        return .merge(
-          .send(.scrollPositionChanged("bottom")),
-          .run { [model = state.model, options] send in
-            do {
-              let stream = try await ollamaService.chat(
-                model: model,
-                messages: chatMessages,
-                options: options
-              )
-              for try await response in stream {
-                if Task.isCancelled {
-                  await send(.streamingComplete(reason: nil))
-                  break
-                }
-                if let messageContent = response.message?.content {
-                  await send(.streamingResponseReceived(messageContent))
-                }
-                if response.done == true {
-                  await send(.streamingComplete(reason: response.doneReason))
-                  break
-                }
-              }
-            } catch {
-              if !Task.isCancelled {
-                await send(.streamingError(error.localizedDescription))
-              } else {
+        let webSearchEnabled = userDefaultsService.getWebSearchEnabled()
+        let tools: [Tool]? = webSearchEnabled ? [.webSearch] : nil
+        
+        return .run { [model = state.model] send in
+          do {
+            let stream = try await ollamaService.chat(
+              model: model,
+              messages: chatMessages,
+              options: options,
+              tools: tools
+            )
+            for try await response in stream {
+              if Task.isCancelled {
                 await send(.streamingComplete(reason: nil))
+                break
+              }
+              
+              // Check for tool calls
+              if let toolCalls = response.message?.toolCalls, !toolCalls.isEmpty {
+                await send(.toolCallsReceived(toolCalls))
+              }
+              
+              if let messageContent = response.message?.content, !messageContent.isEmpty {
+                await send(.streamingResponseReceived(messageContent))
+              }
+              if response.done == true {
+                await send(.streamingComplete(reason: response.doneReason))
+                break
               }
             }
-          }
-          .cancellable(id: CancelID.streaming)
-        )
-        
-      case .streamingResponseReceived(let content):
-        // Update the last message (assistant message) with streaming content
-        if let lastIndex = state.messages.indices.last,
-           state.messages[lastIndex].role == .assistant {
-          state.messages[lastIndex].content += content
-          // Scroll to bottom periodically during streaming to reduce frequency
-          if state.messages[lastIndex].content.count % 80 < content.count {
-            // Force a new scroll event by toggling the binding value
-            state.scrollPosition = nil
-            return .send(.scrollPositionChanged("bottom"))
+          } catch {
+            if !Task.isCancelled {
+              await send(.streamingError(error.localizedDescription))
+            } else {
+              await send(.streamingComplete(reason: nil))
+            }
           }
         }
+        .cancellable(id: CancelID.streaming)
+        
+      case .streamingResponseReceived(let content):
+        // Only process if we have actual content
+        guard !content.isEmpty else {
+          return .none
+        }
+
+        // Create assistant message if it doesn't exist, otherwise append to it
+        if let lastIndex = state.messages.indices.last,
+           state.messages[lastIndex].role == .assistant {
+          // Append to existing assistant message
+          state.messages[lastIndex].content += content
+        } else {
+          // Create new assistant message with this content
+          let assistantMessage = Message.State(
+            id: UUID(),
+            role: .assistant,
+            content: content
+          )
+          state.messages.append(assistantMessage)
+        }
+
+        // Keep loading state active during streaming - only hide on completion
+
         return .none
         
       case .streamingComplete(let reason):
-        state.isLoading = false
-        state.messageInputState.isLoading = false
+        // Only set to idle if we're not in the middle of web search
+        // If we're searching web, the tool completion will handle the next stream
+        if state.loadingState != .searchingWeb {
+          state.loadingState = .idle
+          state.messageInputState.isLoading = false
+        }
+
         state.scrollPosition = nil
         return .send(.scrollPositionChanged("bottom"))
         
         
       case .streamingError(let errorMessage):
-        state.isLoading = false
+        state.loadingState = .idle
         state.messageInputState.isLoading = false
         state.errorMessage = errorMessage
-        // Remove the empty assistant message if there was an error
-        if let lastIndex = state.messages.indices.last,
-           state.messages[lastIndex].role == .assistant,
-           state.messages[lastIndex].content.isEmpty {
-          state.messages.remove(at: lastIndex)
-        }
         return .none
         
+      case .toolCallsReceived(let toolCalls):
+        // Switch to web searching state
+        state.loadingState = .searchingWeb
+        return .send(.executeToolCalls(toolCalls))
+        
+      case .executeToolCalls(let toolCalls):
+        return .run { [model = state.model] send in
+          for toolCall in toolCalls {
+            if toolCall.function.name == "web_search" {
+              do {
+                // Parse the arguments - handle both string and object formats
+                let argumentsData = toolCall.function.arguments.data(using: .utf8) ?? Data()
+                
+                guard let arguments = try? JSONSerialization.jsonObject(with: argumentsData) as? [String: Any],
+                      let query = arguments["query"] as? String else {
+                  await send(.streamingError("Invalid web search query format"))
+                  continue
+                }
+                
+                let searchResults = try await ollamaService.webSearch(query: query)
+                
+                // Format the results as a string
+                let resultsText = searchResults.results.map { result in
+                  "Title: \(result.title)\nURL: \(result.url)\n\(result.content)"
+                }.joined(separator: "\n\n")
+                
+                await send(.toolCallCompleted("web_search", resultsText))
+              } catch {
+                // Turn off web search indicator and show error
+                await send(.streamingError("Web search failed: \(error.localizedDescription)"))
+              }
+            }
+          }
+        }
+        
+      case .toolCallCompleted(let toolName, let result):
+        // Back to regular loading - content will arrive next
+        state.loadingState = .loading
+
+        // Add the tool result as a tool message (hidden in UI)
+        let toolMessage = Message.State(
+          id: UUID(),
+          role: .tool,
+          content: "Search results:\n\n\(result)"
+        )
+        state.messages.append(toolMessage)
+
+        // Convert messages including the tool result for the API call
+        let chatMessages = state.messages.map { message in
+          ChatMessage(role: message.role, content: message.content)
+        }
+        
+        return .send(.startChatStream(chatMessages))
+        
       case .stopGeneration:
-        state.isLoading = false
+        state.loadingState = .idle
         state.messageInputState.isLoading = false
         return .cancel(id: CancelID.streaming)
         
@@ -228,10 +307,10 @@ struct Chat {
         
       case .messageInput:
         return .none
-
+        
       case .messages:
         return .none
-
+        
       case .scrollPositionChanged(let position):
         state.scrollPosition = position
         return .none
@@ -240,7 +319,7 @@ struct Chat {
     .forEach(\.messages, action: \.messages) {
       Message()
     }
-
+    
     Scope(state: \.messageInputState, action: \.messageInput) {
       MessageInput()
     }

@@ -16,12 +16,14 @@ struct ChatView: View {
       // Messages List
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 0) {
-          ForEach(store.scope(state: \.messages, action: \.messages)) { store in
+          ForEach(store.scope(state: \.visibleMessages, action: \.messages)) { store in
             MessageView(store: store)
               .id(store.id)
           }
 
-          if store.isLoading {
+          // Loading indicator based on state
+          switch store.loadingState {
+          case .loading:
             HStack {
               ProgressView()
                 .scaleEffect(0.8)
@@ -31,6 +33,20 @@ struct ChatView: View {
             }
             .padding()
             .id("loading")
+            
+          case .searchingWeb:
+            HStack {
+              ProgressView()
+                .scaleEffect(0.8)
+              Text("Searching the web...")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            .padding()
+            .id("searching")
+            
+          case .idle:
+            EmptyView()
           }
 
           if let error = store.errorMessage {
@@ -45,16 +61,10 @@ struct ChatView: View {
             .id("bottom")
         }
         .scrollTargetLayout()
-//        .padding()
       }
       .scrollDismissesKeyboard(.interactively)
       .defaultScrollAnchor(.bottom)
-      // .scrollPosition(id: Binding(
-      //   get: { store.scrollPosition },
-      //   set: { store.send(.scrollPositionChanged($0)) }
-      // ))
       
-      // Input
       MessageInputView(
         store: store.scope(state: \.messageInputState, action: \.messageInput)
       )

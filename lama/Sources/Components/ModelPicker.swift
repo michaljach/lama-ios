@@ -30,6 +30,7 @@ struct ModelPicker: View {
         HStack(spacing: 4) {
           Text(store.model)
             .font(.headline)
+            .padding(.leading, 6)
           Image(systemName: "chevron.down")
             .font(.caption)
         }

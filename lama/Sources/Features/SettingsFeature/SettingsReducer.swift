@@ -17,6 +17,7 @@ struct Settings {
     var defaultModel: String = "gemma3:4b"
     var temperature: Double = 0.7
     var maxTokens: Int = 2048
+    var webSearchEnabled: Bool = true
 
     init(userDefaultsService: UserDefaultsService = .liveValue) {
       // Load from UserDefaults service
@@ -24,6 +25,7 @@ struct Settings {
       self.defaultModel = userDefaultsService.getDefaultModel()
       self.temperature = userDefaultsService.getTemperature()
       self.maxTokens = userDefaultsService.getMaxTokens()
+      self.webSearchEnabled = userDefaultsService.getWebSearchEnabled()
     }
   }
 
@@ -32,6 +34,7 @@ struct Settings {
     case defaultModelChanged(String)
     case temperatureChanged(Double)
     case maxTokensChanged(Int)
+    case webSearchEnabledChanged(Bool)
     case resetToDefaults
   }
 
@@ -58,12 +61,18 @@ struct Settings {
         userDefaultsService.setMaxTokens(value)
         return .none
 
+      case .webSearchEnabledChanged(let value):
+        state.webSearchEnabled = value
+        userDefaultsService.setWebSearchEnabled(value)
+        return .none
+
       case .resetToDefaults:
         userDefaultsService.resetToDefaults()
         state.ollamaEndpoint = userDefaultsService.getOllamaEndpoint()
         state.defaultModel = userDefaultsService.getDefaultModel()
         state.temperature = userDefaultsService.getTemperature()
         state.maxTokens = userDefaultsService.getMaxTokens()
+        state.webSearchEnabled = userDefaultsService.getWebSearchEnabled()
         return .none
       }
     }

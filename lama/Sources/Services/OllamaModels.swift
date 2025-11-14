@@ -25,12 +25,14 @@ struct ChatRequest {
   let messages: [ChatMessage]
   let stream: Bool
   let options: ChatOptions?
-  
+  let tools: [Tool]?
+
   enum CodingKeys: String, CodingKey {
     case model
     case messages
     case stream
     case options
+    case tools
   }
 }
 
@@ -78,7 +80,7 @@ struct ChatResponse {
   let promptEvalDuration: Int64?
   let evalCount: Int?
   let evalDuration: Int64?
-  
+
   enum CodingKeys: String, CodingKey {
     case model
     case createdAt = "created_at"
@@ -181,20 +183,256 @@ struct ModelDetails {
 
 nonisolated extension ModelDetails: Codable {}
 
-struct ChatMessage {
+struct ChatMessage: Codable {
   let role: MessageRole
   let content: String
-}
+  let toolCalls: [ToolCall]?
 
-nonisolated extension ChatMessage: Codable {}
+  enum CodingKeys: String, CodingKey {
+    case role
+    case content
+    case toolCalls = "tool_calls"
+  }
+
+  init(role: MessageRole, content: String, toolCalls: [ToolCall]? = nil) {
+    self.role = role
+    self.content = content
+    self.toolCalls = toolCalls
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    role = try container.decode(MessageRole.self, forKey: .role)
+    content = try container.decodeIfPresent(String.self, forKey: .content) ?? ""
+    toolCalls = try container.decodeIfPresent([ToolCall].self, forKey: .toolCalls)
+  }
+
+  func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(role, forKey: .role)
+    try container.encode(content, forKey: .content)
+    if let toolCalls = toolCalls {
+      try container.encode(toolCalls, forKey: .toolCalls)
+    }
+  }
+}
 
 enum MessageRole: String {
   case system
   case user
   case assistant
+  case tool
 }
 
 nonisolated extension MessageRole: Codable {}
+
+// MARK: - Tools
+
+struct Tool {
+  let type: String
+  let function: ToolFunction
+
+  init(type: String = "function", function: ToolFunction) {
+    self.type = type
+    self.function = function
+  }
+
+  /// Creates the web_search tool definition
+  static var webSearch: Tool {
+    Tool(
+      function: ToolFunction(
+        name: "web_search",
+        description: "Search the web for current information. Use this when you need up-to-date information or facts that you don't have in your knowledge base.",
+        parameters: ToolFunctionParameters(
+          properties: [
+            "query": ToolPropertyDefinition(
+              type: "string",
+              description: "The search query to find information on the web"
+            )
+          ],
+          required: ["query"]
+        )
+      )
+    )
+  }
+}
+
+nonisolated extension Tool: Codable {}
+
+struct ToolFunction {
+  let name: String
+  let description: String
+  let parameters: ToolFunctionParameters
+}
+
+nonisolated extension ToolFunction: Codable {}
+
+struct ToolFunctionParameters {
+  let type: String
+  let properties: [String: ToolPropertyDefinition]
+  let required: [String]
+
+  init(type: String = "object", properties: [String: ToolPropertyDefinition], required: [String]) {
+    self.type = type
+    self.properties = properties
+    self.required = required
+  }
+}
+
+nonisolated extension ToolFunctionParameters: Codable {}
+
+struct ToolPropertyDefinition {
+  let type: String
+  let description: String?
+
+  init(type: String, description: String? = nil) {
+    self.type = type
+    self.description = description
+  }
+}
+
+nonisolated extension ToolPropertyDefinition: Codable {}
+
+struct ToolCall: Codable {
+  let id: String?
+  let type: String?
+  let function: ToolCallFunction
+
+  enum CodingKeys: String, CodingKey {
+    case id
+    case type
+    case function
+  }
+
+  init(id: String? = nil, type: String? = nil, function: ToolCallFunction) {
+    self.id = id
+    self.type = type
+    self.function = function
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decodeIfPresent(String.self, forKey: .id)
+    type = try container.decodeIfPresent(String.self, forKey: .type)
+    function = try container.decode(ToolCallFunction.self, forKey: .function)
+  }
+}
+
+struct ToolCallFunction: Codable {
+  let name: String
+  let arguments: String
+
+  enum CodingKeys: String, CodingKey {
+    case name
+    case arguments
+  }
+
+  init(name: String, arguments: String) {
+    self.name = name
+    self.arguments = arguments
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    name = try container.decode(String.self, forKey: .name)
+
+    // Arguments can be either a string or a JSON object, so we need to handle both
+    if let argumentsString = try? container.decode(String.self, forKey: .arguments) {
+      arguments = argumentsString
+    } else if let argumentsDict = try? container.decode([String: AnyCodable].self, forKey: .arguments) {
+      // Convert dictionary to JSON string
+      if let jsonData = try? JSONEncoder().encode(argumentsDict),
+         let jsonString = String(data: jsonData, encoding: .utf8) {
+        arguments = jsonString
+      } else {
+        arguments = "{}"
+      }
+    } else {
+      arguments = "{}"
+    }
+  }
+}
+
+// Helper to decode any JSON value
+struct AnyCodable: Codable {
+  let value: Any
+
+  init(_ value: Any) {
+    self.value = value
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.singleValueContainer()
+    if let bool = try? container.decode(Bool.self) {
+      value = bool
+    } else if let int = try? container.decode(Int.self) {
+      value = int
+    } else if let double = try? container.decode(Double.self) {
+      value = double
+    } else if let string = try? container.decode(String.self) {
+      value = string
+    } else if let array = try? container.decode([AnyCodable].self) {
+      value = array.map { $0.value }
+    } else if let dictionary = try? container.decode([String: AnyCodable].self) {
+      value = dictionary.mapValues { $0.value }
+    } else {
+      value = NSNull()
+    }
+  }
+
+  func encode(to encoder: Encoder) throws {
+    var container = encoder.singleValueContainer()
+    switch value {
+    case let bool as Bool:
+      try container.encode(bool)
+    case let int as Int:
+      try container.encode(int)
+    case let double as Double:
+      try container.encode(double)
+    case let string as String:
+      try container.encode(string)
+    case let array as [Any]:
+      try container.encode(array.map { AnyCodable($0) })
+    case let dictionary as [String: Any]:
+      try container.encode(dictionary.mapValues { AnyCodable($0) })
+    default:
+      try container.encodeNil()
+    }
+  }
+}
+
+// MARK: - Web Search
+
+struct WebSearchRequest {
+  let query: String
+  let maxResults: Int?
+
+  enum CodingKeys: String, CodingKey {
+    case query
+    case maxResults = "max_results"
+  }
+
+  init(query: String, maxResults: Int? = 5) {
+    self.query = query
+    self.maxResults = maxResults
+  }
+}
+
+nonisolated extension WebSearchRequest: Codable {}
+
+struct WebSearchResponse {
+  let results: [WebSearchResult]
+}
+
+nonisolated extension WebSearchResponse: Codable {}
+
+struct WebSearchResult {
+  let title: String
+  let url: String
+  let content: String
+}
+
+nonisolated extension WebSearchResult: Codable {}
 
 // MARK: - Options
 

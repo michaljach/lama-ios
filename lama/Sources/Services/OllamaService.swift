@@ -45,19 +45,22 @@ actor OllamaService {
   ///   - model: The model name to use (e.g., "llama2", "mistral")
   ///   - messages: Array of chat messages
   ///   - options: Optional generation options
+  ///   - tools: Optional array of tools the model can use
   /// - Returns: AsyncThrowingStream of ChatResponse chunks
   func chat(
     model: String,
     messages: [ChatMessage],
-    options: ChatOptions? = nil
+    options: ChatOptions? = nil,
+    tools: [Tool]? = nil
   ) async throws -> AsyncThrowingStream<ChatResponse, Error> {
     let request = ChatRequest(
       model: model,
       messages: messages,
       stream: true,
-      options: options
+      options: options,
+      tools: tools
     )
-    
+
     return try await performStreamingRequest(
       endpoint: "/api/chat",
       request: request
@@ -71,19 +74,22 @@ actor OllamaService {
   ///   - model: The model name to use
   ///   - messages: Array of chat messages
   ///   - options: Optional generation options
+  ///   - tools: Optional array of tools the model can use
   /// - Returns: Complete ChatResponse
   func chatComplete(
     model: String,
     messages: [ChatMessage],
-    options: ChatOptions? = nil
+    options: ChatOptions? = nil,
+    tools: [Tool]? = nil
   ) async throws -> ChatResponse {
     let request = ChatRequest(
       model: model,
       messages: messages,
       stream: false,
-      options: options
+      options: options,
+      tools: tools
     )
-    
+
     return try await performRequest(
       endpoint: "/api/chat",
       request: request,
@@ -197,6 +203,53 @@ actor OllamaService {
     )
   }
   
+  // MARK: - Web Search
+
+  /// Perform a web search using Ollama's web search API
+  /// - Parameters:
+  ///   - query: The search query
+  ///   - maxResults: Maximum number of results to return (default 5, max 10)
+  /// - Returns: WebSearchResponse with search results
+  func webSearch(query: String, maxResults: Int = 5) async throws -> WebSearchResponse {
+    let request = WebSearchRequest(query: query, maxResults: maxResults)
+
+    guard let url = URL(string: "https://ollama.com/api/web_search") else {
+      throw OllamaError.invalidURL
+    }
+
+    var urlRequest = URLRequest(url: url)
+    urlRequest.httpMethod = "POST"
+    urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    addAuthorizationHeader(to: &urlRequest)
+
+    do {
+      urlRequest.httpBody = try JSONEncoder().encode(request)
+    } catch {
+      throw OllamaError.encodingError(error)
+    }
+
+    do {
+      let (data, response) = try await urlSession.data(for: urlRequest)
+
+      guard let httpResponse = response as? HTTPURLResponse else {
+        throw OllamaError.invalidResponse
+      }
+
+      guard (200...299).contains(httpResponse.statusCode) else {
+        if let errorResponse = try? JSONDecoder().decode(OllamaErrorResponse.self, from: data) {
+          throw OllamaError.apiError(errorResponse.error)
+        }
+        throw OllamaError.httpError(httpResponse.statusCode)
+      }
+
+      return try JSONDecoder().decode(WebSearchResponse.self, from: data)
+    } catch let error as OllamaError {
+      throw error
+    } catch {
+      throw OllamaError.networkError(error)
+    }
+  }
+
   // MARK: - Private Helpers
   
   private func performRequest<T: Codable, U: Codable>(

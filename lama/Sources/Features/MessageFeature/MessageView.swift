@@ -31,7 +31,6 @@ struct MessageView: View {
       }
     }
     .padding()
-    // Avoid off-screen rasterization which can hurt scrolling performance
   }
 }
 

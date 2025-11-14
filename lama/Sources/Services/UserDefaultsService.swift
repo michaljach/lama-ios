@@ -16,8 +16,9 @@ struct UserDefaultsService {
     static let defaultModel = "defaultModel"
     static let temperature = "temperature"
     static let maxTokens = "maxTokens"
+    static let webSearchEnabled = "webSearchEnabled"
   }
-  
+
   // Default values
   private enum Defaults {
     static let ollamaEndpoint = "https://ollama.com"
@@ -25,6 +26,7 @@ struct UserDefaultsService {
     static let temperature = 0.7
     static let maxTokens = 640
     static let authToken = "760999c692364c0a843c1fbc5d6f491b.c_EfP3NyyWUpPGI3OYjqNr9S"
+    static let webSearchEnabled = true
   }
   
   var getOllamaEndpoint: @Sendable () -> String
@@ -40,7 +42,10 @@ struct UserDefaultsService {
   var setMaxTokens: @Sendable (Int) -> Void
   
   var getAuthToken: @Sendable () -> String?
-  
+
+  var getWebSearchEnabled: @Sendable () -> Bool
+  var setWebSearchEnabled: @Sendable (Bool) -> Void
+
   var resetToDefaults: @Sendable () -> Void
 }
 
@@ -75,11 +80,18 @@ extension UserDefaultsService: DependencyKey {
     getAuthToken: {
       Defaults.authToken
     },
+    getWebSearchEnabled: {
+      UserDefaults.standard.object(forKey: Keys.webSearchEnabled) as? Bool ?? Defaults.webSearchEnabled
+    },
+    setWebSearchEnabled: { value in
+      UserDefaults.standard.set(value, forKey: Keys.webSearchEnabled)
+    },
     resetToDefaults: {
       UserDefaults.standard.set(Defaults.ollamaEndpoint, forKey: Keys.ollamaEndpoint)
       UserDefaults.standard.set(Defaults.defaultModel, forKey: Keys.defaultModel)
       UserDefaults.standard.set(Defaults.temperature, forKey: Keys.temperature)
       UserDefaults.standard.set(Defaults.maxTokens, forKey: Keys.maxTokens)
+      UserDefaults.standard.set(Defaults.webSearchEnabled, forKey: Keys.webSearchEnabled)
     }
   )
   
@@ -93,6 +105,8 @@ extension UserDefaultsService: DependencyKey {
     getMaxTokens: { Defaults.maxTokens },
     setMaxTokens: { _ in },
     getAuthToken: { Defaults.authToken },
+    getWebSearchEnabled: { Defaults.webSearchEnabled },
+    setWebSearchEnabled: { _ in },
     resetToDefaults: { }
   )
 }

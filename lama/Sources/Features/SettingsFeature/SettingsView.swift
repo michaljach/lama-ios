@@ -64,6 +64,24 @@ struct SettingsView: View {
       }
 
       Section {
+        Toggle(isOn: Binding(
+          get: { store.webSearchEnabled },
+          set: { store.send(.webSearchEnabledChanged($0)) }
+        )) {
+          VStack(alignment: .leading, spacing: 4) {
+            Text("Web Search")
+            Text("Allow the model to search the web for current information")
+              .font(.caption)
+              .foregroundStyle(.secondary)
+          }
+        }
+      } header: {
+        Text("Features")
+      } footer: {
+        Text("When enabled, the model can search the internet to provide up-to-date information. Requires an Ollama API key.")
+      }
+
+      Section {
         Button(role: .destructive) {
           store.send(.resetToDefaults)
         } label: {

@@ -23,8 +23,11 @@ struct ChatListView: View {
                 VStack(alignment: .leading, spacing: 4) {
                   Text(chat.title)
                     .font(.headline)
-                  if !chat.messages.isEmpty {
-                    Text("\(chat.messages.count) message\(chat.messages.count == 1 ? "" : "s")")
+                  let visibleMessageCount = chat.messages.filter { message in
+                    message.role != .tool
+                  }.count
+                  if visibleMessageCount > 0 {
+                    Text("\(visibleMessageCount) message\(visibleMessageCount == 1 ? "" : "s")")
                       .font(.caption)
                       .foregroundStyle(.secondary)
                   }
