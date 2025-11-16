@@ -159,7 +159,11 @@ struct Chat {
       case .startChatStream(let chatMessages):
         let temperature = userDefaultsService.getTemperature()
         let maxTokens = userDefaultsService.getMaxTokens()
-        let options = ChatOptions(temperature: temperature, numPredict: maxTokens)
+        let options = ChatOptions(
+          temperature: temperature,
+          numPredict: maxTokens,
+          stop: ["\n\n"]  // Stop at paragraph breaks to avoid cutting mid-sentence
+        )
         let webSearchEnabled = userDefaultsService.getWebSearchEnabled()
         let tools: [Tool]? = webSearchEnabled ? [.webSearch] : nil
         

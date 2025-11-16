@@ -444,6 +444,8 @@ struct ChatOptions {
   let seed: Int?
   // The maximum number of tokens to predict (Ollama option: num_predict)
   let numPredict: Int?
+  // Sequences where the model will stop generating further tokens
+  let stop: [String]?
   
   enum CodingKeys: String, CodingKey {
     case temperature
@@ -452,6 +454,7 @@ struct ChatOptions {
     case repeatPenalty = "repeat_penalty"
     case seed
     case numPredict = "num_predict"
+    case stop
   }
   
   init(
@@ -460,7 +463,8 @@ struct ChatOptions {
     topK: Int? = nil,
     repeatPenalty: Double? = nil,
     seed: Int? = nil,
-    numPredict: Int? = nil
+    numPredict: Int? = nil,
+    stop: [String]? = nil
   ) {
     self.temperature = temperature
     self.topP = topP
@@ -468,6 +472,7 @@ struct ChatOptions {
     self.repeatPenalty = repeatPenalty
     self.seed = seed
     self.numPredict = numPredict
+    self.stop = stop
   }
 }
 
@@ -481,6 +486,8 @@ struct GenerateOptions {
   let seed: Int?
   // The maximum number of tokens to predict (Ollama option: num_predict)
   let numPredict: Int?
+  // Sequences where the model will stop generating further tokens
+  let stop: [String]?
   
   enum CodingKeys: String, CodingKey {
     case temperature
@@ -489,6 +496,7 @@ struct GenerateOptions {
     case repeatPenalty = "repeat_penalty"
     case seed
     case numPredict = "num_predict"
+    case stop
   }
   
   init(
@@ -497,7 +505,8 @@ struct GenerateOptions {
     topK: Int? = nil,
     repeatPenalty: Double? = nil,
     seed: Int? = nil,
-    numPredict: Int? = nil
+    numPredict: Int? = nil,
+    stop: [String]? = nil
   ) {
     self.temperature = temperature
     self.topP = topP
@@ -505,6 +514,7 @@ struct GenerateOptions {
     self.repeatPenalty = repeatPenalty
     self.seed = seed
     self.numPredict = numPredict
+    self.stop = stop
   }
 }
 
