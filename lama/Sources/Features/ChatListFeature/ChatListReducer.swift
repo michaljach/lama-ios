@@ -40,14 +40,26 @@ struct ChatList {
           await send(.newChatButtonTapped)
         }
         
-      case let .path(.element(id: id, action: .chat(chatAction))):
-        // Sync changes from path chat to the chats collection
-        if let pathChat = state.path[id: id]?.chat {
-          state.chats[id: pathChat.id] = pathChat
+      case let .path(.element(id: id, action: .chat)):
+        // CRITICAL: Sync all changes from path to chats collection
+        // This must happen on every chat action to preserve message history
+        for (index, pathElement) in state.path.enumerated() {
+          if case let .chat(pathChat) = pathElement {
+            // Update the chats collection with the current path chat state
+            if state.chats.contains(where: { $0.id == pathChat.id }) {
+              state.chats[id: pathChat.id] = pathChat
+            }
+          }
         }
         return .none
 
       case .path(.popFrom):
+        // Sync all pending changes before removing from navigation stack
+        for pathElement in state.path {
+          if case let .chat(chat) = pathElement {
+            state.chats[id: chat.id] = chat
+          }
+        }
         // When navigating back, clean up empty chats
         return .send(.removeEmptyChats)
 

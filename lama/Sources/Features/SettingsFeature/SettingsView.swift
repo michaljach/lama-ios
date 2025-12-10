@@ -22,12 +22,29 @@ struct SettingsView: View {
           .autocorrectionDisabled()
           .keyboardType(.URL)
 
-        Picker("Default Model", selection: Binding(
-          get: { store.defaultModel },
-          set: { store.send(.defaultModelChanged($0)) }
-        )) {
-          ForEach(store.availableModels, id: \.self) { model in
-            Text(model).tag(model)
+        if store.isLoadingModels {
+          HStack {
+            Text("Default Model")
+            Spacer()
+            ProgressView()
+              .scaleEffect(0.8, anchor: .center)
+          }
+        } else if store.availableModels.isEmpty {
+          Picker("Default Model", selection: Binding(
+            get: { store.defaultModel },
+            set: { store.send(.defaultModelChanged($0)) }
+          )) {
+            Text("No models available").tag("")
+          }
+          .disabled(true)
+        } else {
+          Picker("Default Model", selection: Binding(
+            get: { store.defaultModel },
+            set: { store.send(.defaultModelChanged($0)) }
+          )) {
+            ForEach(store.availableModels, id: \.self) { model in
+              Text(model).tag(model)
+            }
           }
         }
       } header: {
@@ -97,6 +114,9 @@ struct SettingsView: View {
     }
     .navigationTitle("Settings")
     .navigationBarTitleDisplayMode(.inline)
+    .onAppear {
+      store.send(.loadModels)
+    }
   }
 }
 

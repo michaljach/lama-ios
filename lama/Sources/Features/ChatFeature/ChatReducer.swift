@@ -203,7 +203,7 @@ struct Chat {
         let options = ChatOptions(
           temperature: temperature,
           numPredict: maxTokens,
-          stop: ["\n\n"]  // Stop at paragraph breaks to avoid cutting mid-sentence
+          stop: []  // Don't stop early - let the model complete naturally up to max tokens
         )
         
         return .run { [model = state.model] send in

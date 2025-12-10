@@ -14,11 +14,12 @@ struct Settings {
   @ObservableState
   struct State: Equatable {
     var ollamaEndpoint: String = ""
-    var defaultModel: String = "gemma3:4b"
+    var defaultModel: String = "gpt-oss:120b"
     var temperature: Double = 0.7
     var maxTokens: Int = 2048
     var webSearchEnabled: Bool = true
-    var availableModels: [String] = ["gemma3:4b", "llama2", "neural-chat", "mistral"]
+    var availableModels: [String] = []
+    var isLoadingModels: Bool = false
 
     init(userDefaultsService: UserDefaultsService = .liveValue) {
       // Load from UserDefaults service
@@ -37,6 +38,9 @@ struct Settings {
     case maxTokensChanged(Int)
     case webSearchEnabledChanged(Bool)
     case resetToDefaults
+    case loadModels
+    case modelsLoaded([String])
+    case modelsLoadFailed
   }
 
   var body: some Reducer<State, Action> {
@@ -74,6 +78,28 @@ struct Settings {
         state.temperature = userDefaultsService.getTemperature()
         state.maxTokens = userDefaultsService.getMaxTokens()
         state.webSearchEnabled = userDefaultsService.getWebSearchEnabled()
+        return .none
+      
+      case .loadModels:
+        state.isLoadingModels = true
+        return .run { [userDefaultsService] send in
+          let ollamaService = OllamaService(userDefaultsService: userDefaultsService)
+          do {
+            let response = try await ollamaService.listModels()
+            let modelNames = response.models.map { $0.name }
+            await send(.modelsLoaded(modelNames))
+          } catch {
+            await send(.modelsLoadFailed)
+          }
+        }
+      
+      case .modelsLoaded(let models):
+        state.isLoadingModels = false
+        state.availableModels = models
+        return .none
+      
+      case .modelsLoadFailed:
+        state.isLoadingModels = false
         return .none
       }
     }
