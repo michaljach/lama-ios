@@ -25,7 +25,7 @@ struct UserDefaultsService {
     static let defaultModel = "gpt-oss:120b"
     static let temperature = 0.7
     static let maxTokens = 640
-    static let authToken = "760999c692364c0a843c1fbc5d6f491b.c_EfP3NyyWUpPGI3OYjqNr9S"
+    static let authToken = ""
     static let webSearchEnabled = true
   }
   
