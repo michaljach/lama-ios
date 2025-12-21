@@ -10,6 +10,7 @@ import Foundation
 
 @Reducer
 struct ChatList {
+  @Dependency(\.groqService) var groqService
   @Reducer
   enum Path {
     case chat(Chat)
@@ -20,6 +21,8 @@ struct ChatList {
   struct State: Equatable {
     var chats: IdentifiedArrayOf<Chat.State> = []
     var path = StackState<Path.State>()
+    var availableModels: [String] = []
+    var isLoadingModels = false
   }
 
   enum Action {
@@ -27,6 +30,9 @@ struct ChatList {
     case settingsButtonTapped
     case removeEmptyChats
     case initialize
+    case loadModels
+    case modelsLoaded([String])
+    case modelsLoadError(String)
     case deleteChat(Chat.State.ID)
     case chats(IdentifiedActionOf<Chat>)
     case path(StackActionOf<Path>)
@@ -36,9 +42,38 @@ struct ChatList {
     Reduce { state, action in
       switch action {
       case .initialize:
+        return .merge(
+          .send(.loadModels),
+          .run { send in
+            await send(.newChatButtonTapped)
+          }
+        )
+      
+      case .loadModels:
+        state.isLoadingModels = true
         return .run { send in
-          await send(.newChatButtonTapped)
+          do {
+            let models = try await GroqService().listModels()
+            await send(.modelsLoaded(models))
+          } catch {
+            await send(.modelsLoadError(error.localizedDescription))
+          }
         }
+      
+      case .modelsLoaded(let models):
+        state.isLoadingModels = false
+        state.availableModels = models
+        
+        // Sync models to all chats in collection
+        for index in state.chats.indices {
+          state.chats[index].availableModels = models
+        }
+        
+        return .none
+      
+      case .modelsLoadError:
+        state.isLoadingModels = false
+        return .none
         
       case .path(.element(id: _, action: _)):
         // Sync all changes from path to chats collection
@@ -59,6 +94,10 @@ struct ChatList {
             state.chats[id: chat.id] = chat
           }
         }
+        // Ensure models are preserved in all chats
+        for index in state.chats.indices {
+          state.chats[index].availableModels = state.availableModels
+        }
         // When navigating back, clean up empty chats
         return .send(.removeEmptyChats)
 
@@ -78,7 +117,8 @@ struct ChatList {
 
       case .newChatButtonTapped:
         let newChatId = UUID()
-        let newChatItem = Chat.State(id: newChatId)
+        var newChatItem = Chat.State(id: newChatId)
+        newChatItem.availableModels = state.availableModels
         state.chats.insert(newChatItem, at: 0)
         state.path.append(.chat(newChatItem))
         return .none

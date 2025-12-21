@@ -56,6 +56,7 @@ actor GroqService {
   ) async throws -> AsyncThrowingStream<ChatResponse, Error> {
     // Determine which model to use
     var modelToUse = model
+    var webSearchEnabled = enableWebSearch
     
     // Check if any message contains images
     let hasImages = messages.contains { message in
@@ -69,11 +70,16 @@ actor GroqService {
     if hasImages {
       // Use vision model for image requests
       modelToUse = "meta-llama/llama-4-scout-17b-16e-instruct"
-    } else if enableWebSearch {
-      modelToUse = "groq/compound"
+      webSearchEnabled = false
+    } else if webSearchEnabled && !modelToUse.contains("compound") {
+      // Web search only works with compound models - disable if using a different model
+      webSearchEnabled = false
     }
     
     let tools: [GroqTool]? = nil
+    
+    // Only include reasoning for GPT-OSS models that support it
+    let shouldIncludeReasoning = modelToUse.contains("gpt-oss")
     
     let groqRequest = GroqChatRequest(
       model: modelToUse,
@@ -82,7 +88,8 @@ actor GroqService {
       maxTokens: maxTokens,
       topP: topP,
       stream: true,
-      tools: tools
+      tools: tools,
+      includeReasoning: shouldIncludeReasoning ? true : nil
     )
     
     return try await performStreamingRequest(request: groqRequest)

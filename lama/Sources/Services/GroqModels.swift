@@ -158,6 +158,7 @@ struct GroqChatRequest: Codable {
   let topP: Double?
   let stream: Bool
   let tools: [GroqTool]?
+  let includeReasoning: Bool?
   
   enum CodingKeys: String, CodingKey {
     case model
@@ -167,6 +168,7 @@ struct GroqChatRequest: Codable {
     case topP = "top_p"
     case stream
     case tools
+    case includeReasoning = "include_reasoning"
   }
   
   init(
@@ -176,7 +178,8 @@ struct GroqChatRequest: Codable {
     maxTokens: Int? = nil,
     topP: Double? = nil,
     stream: Bool,
-    tools: [GroqTool]? = nil
+    tools: [GroqTool]? = nil,
+    includeReasoning: Bool? = nil
   ) {
     self.model = model
     self.messages = messages
@@ -185,6 +188,30 @@ struct GroqChatRequest: Codable {
     self.topP = topP
     self.stream = stream
     self.tools = tools
+    self.includeReasoning = includeReasoning
+  }
+  
+  func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(model, forKey: .model)
+    try container.encode(messages, forKey: .messages)
+    try container.encode(stream, forKey: .stream)
+    
+    if let temperature = temperature {
+      try container.encode(temperature, forKey: .temperature)
+    }
+    if let maxTokens = maxTokens {
+      try container.encode(maxTokens, forKey: .maxTokens)
+    }
+    if let topP = topP {
+      try container.encode(topP, forKey: .topP)
+    }
+    if let tools = tools {
+      try container.encode(tools, forKey: .tools)
+    }
+    if let includeReasoning = includeReasoning {
+      try container.encode(includeReasoning, forKey: .includeReasoning)
+    }
   }
 }
 

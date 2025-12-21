@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ModelPicker: View {
   let store: StoreOf<Chat>
+  let isDisabled: Bool
 
   var body: some View {
     if !store.availableModels.isEmpty {
@@ -23,8 +24,28 @@ struct ModelPicker: View {
               if model == store.model {
                 Image(systemName: "checkmark")
               }
+              
+              // Show capabilities
+              HStack(spacing: 4) {
+                if model.contains("compound") {
+                  Image(systemName: "globe.americas.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.blue)
+                }
+                if model.contains("gpt-oss") {
+                  Image(systemName: "sparkles")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+                }
+                if model.contains("llama-4-scout") {
+                  Image(systemName: "photo.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.green)
+                }
+              }
             }
           }
+          .disabled(isDisabled)
         }
       } label: {
         HStack(spacing: 4) {
@@ -35,6 +56,8 @@ struct ModelPicker: View {
             .font(.caption)
         }
       }
+      .disabled(isDisabled)
+      .opacity(isDisabled ? 0.5 : 1.0)
     }
   }
 }

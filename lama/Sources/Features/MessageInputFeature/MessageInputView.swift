@@ -98,8 +98,8 @@ struct MessageInputView: View {
             } label: {
               Image(systemName: "stop.fill")
                 .resizable()
-                .frame(width: 14, height: 14)
-                .padding(10)
+                .frame(width: 12, height: 12)
+                .padding(12)
                 .foregroundStyle(Color.colorForegroundInverse)
                 .background(Circle().fill(Color.colorBlue))
             }

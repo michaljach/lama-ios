@@ -47,10 +47,20 @@ struct MessageView: View {
           }
         }
       } else {
-        Markdown(store.content)
-          .multilineTextAlignment(.leading)
-          .textSelection(.enabled)
-          .markdownTableBorderStyle(.init(color: .colorGray))
+        VStack(alignment: .leading, spacing: 12) {
+          // Display reasoning if available
+          if let reasoning = store.reasoning, !reasoning.isEmpty {
+            ReasoningView(reasoning: reasoning)
+              .padding(.horizontal, 16)
+              .padding(.top, 8)
+          }
+          
+          // Display main content
+          Markdown(store.content)
+            .multilineTextAlignment(.leading)
+            .textSelection(.enabled)
+            .markdownTableBorderStyle(.init(color: .colorGray))
+        }
       }
     }
     .padding()

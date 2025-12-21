@@ -82,12 +82,8 @@ struct ChatView: View {
     .navigationTitle("Chat")
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      ToolbarItem(placement: .principal) {
-        Text("LLAME")
-      }
-      
       ToolbarItem(placement: .topBarTrailing) {
-        ModelPicker(store: store)
+        ModelPicker(store: store, isDisabled: !store.messages.isEmpty)
       }
     }
     .onAppear {
