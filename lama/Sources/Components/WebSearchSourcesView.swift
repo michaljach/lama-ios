@@ -16,7 +16,7 @@ struct WebSearchSourcesView: View {
       isShowingAllSources = true
     } label: {
       HStack(alignment: .center) {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
           Image(systemName: "globe")
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -49,7 +49,7 @@ struct WebSearchSourcesView: View {
         .padding(.trailing, 16)
         .padding(.vertical, 12)
       }
-      .background(Color.colorGray.opacity(0.5))
+      .background(Color.colorGray)
       .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     .padding(.horizontal, 16)

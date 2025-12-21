@@ -277,7 +277,6 @@ actor GroqService {
                     
                     if let jsonData = jsonString.data(using: .utf8) {
                       do {
-                        
                         let groqResponse = try JSONDecoder().decode(GroqChatResponse.self, from: jsonData)
                         let chatResponse = convertGroqResponseToChatResponse(groqResponse)
                         continuation.yield(chatResponse)

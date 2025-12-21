@@ -191,51 +191,25 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "281"
-            endingLineNumber = "281">
+            endingLineNumber = "281"
+            landmarkName = "body"
+            landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "EFC91B17-C624-413B-BC47-5458BCCB7044"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "lama/Sources/Features/ChatFeature/ChatReducer.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "333"
-            endingLineNumber = "333">
-            <Locations>
-               <Location
-                  uuid = "EFC91B17-C624-413B-BC47-5458BCCB7044 - 5f4cf05b434ffe6d"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "__C.UIImage.resized(to: __C.CGSize) -&gt; __C.UIImage"
-                  moduleName = "lama.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/jach/dev/lama/lama/Sources/Features/ChatFeature/ChatReducer.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "333"
-                  endingLineNumber = "333">
-               </Location>
-               <Location
-                  uuid = "EFC91B17-C624-413B-BC47-5458BCCB7044 - 8b2b4b4a865fe88b"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (inout lama.Chat.State, lama.Chat.Action) -&gt; ComposableArchitecture.Effect&lt;lama.Chat.Action&gt; in lama.Chat.body.getter : some"
-                  moduleName = "lama.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/jach/dev/lama/lama/Sources/Features/ChatFeature/ChatReducer.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "333"
-                  endingLineNumber = "333">
-               </Location>
-            </Locations>
+            endingLineNumber = "333"
+            landmarkName = "body"
+            landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -265,7 +239,9 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "313"
-            endingLineNumber = "313">
+            endingLineNumber = "313"
+            landmarkName = "body"
+            landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -279,7 +255,9 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "321"
-            endingLineNumber = "321">
+            endingLineNumber = "321"
+            landmarkName = "body"
+            landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -293,7 +271,9 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "326"
-            endingLineNumber = "326">
+            endingLineNumber = "326"
+            landmarkName = "body"
+            landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -307,7 +287,9 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "299"
-            endingLineNumber = "299">
+            endingLineNumber = "299"
+            landmarkName = "body"
+            landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy

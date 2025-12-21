@@ -12,7 +12,7 @@ import UIKit
 @Reducer
 struct Message {
   @ObservableState
-  struct State: Equatable, Identifiable {
+  struct State: Identifiable, Equatable {
     var id: UUID
     var role: MessageRole
     var content: String
@@ -25,6 +25,14 @@ struct Message {
       self.content = content
       self.images = images
       self.reasoning = reasoning
+    }
+    
+    // Custom Equatable implementation to ignore UIImage comparison
+    static func == (lhs: State, rhs: State) -> Bool {
+      lhs.id == rhs.id &&
+      lhs.role == rhs.role &&
+      lhs.content == rhs.content &&
+      lhs.reasoning == rhs.reasoning
     }
   }
   
