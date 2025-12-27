@@ -44,7 +44,7 @@ struct MessageInputView: View {
       }
       
       // Input area
-      HStack(spacing: 12) {
+      HStack {
         VStack {
           PhotosPicker(
             selection: $selectedPhotoPickerItem,
@@ -98,8 +98,8 @@ struct MessageInputView: View {
             } label: {
               Image(systemName: "stop.fill")
                 .resizable()
-                .frame(width: 12, height: 12)
-                .padding(12)
+                .frame(width: 10, height: 10)
+                .padding(10)
                 .foregroundStyle(Color.colorForegroundInverse)
                 .background(Circle().fill(Color.colorBlue))
             }
@@ -111,14 +111,14 @@ struct MessageInputView: View {
               Image(systemName: "arrow.up")
                 .resizable()
                 .frame(width: 14, height: 14)
-                .padding(10)
+                .padding(8)
                 .foregroundStyle(Color.colorForegroundInverse)
                 .background(Circle().fill(Color.colorBlue))
             }
             .disabled(store.inputText.trimmingCharacters(in: .whitespaces).isEmpty)
           }
         }
-        .padding(.trailing, 8)
+        .padding(.trailing, 10)
         .apply { view in
           if #available(iOS 26.0, *) {
             view.glassEffect(.regular.interactive())
@@ -144,7 +144,7 @@ extension View {
 #Preview {
   MessageInputView(
     store: Store(initialState: MessageInput.State(
-      isLoading: true
+      isLoading: false
     )) {
       MessageInput()
     }

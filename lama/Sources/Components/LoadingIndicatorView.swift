@@ -33,7 +33,7 @@ struct LoadingIndicatorView: View {
           )
         )
     }
-    .padding(.horizontal, 16)
+    .padding(.horizontal)
     .padding(.vertical, 12)
     .onAppear {
       withAnimation(

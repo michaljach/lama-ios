@@ -273,6 +273,18 @@ struct Chat {
         state.loadingState = .idle
         state.messageInputState.isLoading = false
         state.errorMessage = errorMessage
+        
+        // Mark the last user message as resendable
+        if let lastUserMessageIndex = state.messages.lastIndex(where: { $0.role == .user }) {
+          state.messages[lastUserMessageIndex].canResend = true
+        }
+        
+        // Remove the incomplete assistant message if it exists
+        if let lastIndex = state.messages.indices.last,
+           state.messages[lastIndex].role == .assistant {
+          state.messages.remove(at: lastIndex)
+        }
+        
         return .none
         
       case .stopGeneration:
@@ -287,10 +299,63 @@ struct Chat {
         // Forward all other messageInput actions to the child reducer
         return .none
         
-      case .messages:
-        return .none
+      case .messages(.element(id: let id, action: .resend)):
+        // Find the resent message and rebuild the conversation
+        guard let messageIndex = state.messages.firstIndex(where: { $0.id == id }) else {
+          return .none
+        }
         
-      case .scrollPositionChanged:
+        let resendMessage = state.messages[messageIndex]
+        
+        // Reset the resend button
+        state.messages[messageIndex].canResend = false
+        
+        // Clear any previous error
+        state.errorMessage = nil
+        state.loadingState = .loading
+        state.messageInputState.isLoading = true
+        
+        // Remove any assistant messages after this user message
+        while state.messages.count > messageIndex + 1 {
+          state.messages.remove(at: messageIndex + 1)
+        }
+        
+        // Build messages for API up to and including the resent message
+        var chatMessages: [ChatMessage] = []
+        
+        for message in state.messages[...messageIndex] {
+          if message.id == id && !resendMessage.images.isEmpty {
+            // Build multimodal content block array for this user message
+            var contentBlocks: [ContentBlock] = []
+            
+            // Add text block if there's text
+            if !resendMessage.content.isEmpty {
+              contentBlocks.append(ContentBlock(type: "text", text: resendMessage.content))
+            }
+            
+            // Add image blocks in proper OpenAI format
+            for image in resendMessage.images {
+              // Resize and compress image to reduce request size
+              let resizedImage = image.resized(to: CGSize(width: 1024, height: 1024))
+              if let imageData = resizedImage.jpegData(compressionQuality: 0.6) {
+                let base64String = imageData.base64EncodedString()
+                let dataUrl = "data:image/jpeg;base64,\(base64String)"
+                contentBlocks.append(ContentBlock(type: "image_url", imageUrl: dataUrl))
+              }
+            }
+            
+            chatMessages.append(ChatMessage(role: message.role, content: .array(contentBlocks)))
+          } else {
+            // All other messages must be text-only
+            chatMessages.append(ChatMessage(role: message.role, content: .text(message.content)))
+          }
+        }
+        
+        chatMessages = chatMessages.withDefaultSystemPrompt()
+        
+        return .send(.startChatStream(chatMessages))
+        
+      case .messages:
         return .none
         
       case .webSearchStarted:

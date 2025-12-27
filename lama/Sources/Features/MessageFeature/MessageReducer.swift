@@ -18,13 +18,15 @@ struct Message {
     var content: String
     var images: [UIImage] = []
     var reasoning: String?
+    var canResend: Bool = false
     
-    init(id: UUID = UUID(), role: MessageRole, content: String, images: [UIImage] = [], reasoning: String? = nil) {
+    init(id: UUID = UUID(), role: MessageRole, content: String, images: [UIImage] = [], reasoning: String? = nil, canResend: Bool = false) {
       self.id = id
       self.role = role
       self.content = content
       self.images = images
       self.reasoning = reasoning
+      self.canResend = canResend
     }
     
     // Custom Equatable implementation to ignore UIImage comparison
@@ -32,15 +34,21 @@ struct Message {
       lhs.id == rhs.id &&
       lhs.role == rhs.role &&
       lhs.content == rhs.content &&
-      lhs.reasoning == rhs.reasoning
+      lhs.reasoning == rhs.reasoning &&
+      lhs.canResend == rhs.canResend
     }
   }
   
   enum Action: Equatable {
-    
+    case resend
   }
   
   var body: some Reducer<State, Action> {
-    EmptyReducer()
+    Reduce { (state: inout State, action: Action) -> Effect<Action> in
+      switch action {
+      case .resend:
+        return .none
+      }
+    }
   }
 }

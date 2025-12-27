@@ -15,7 +15,7 @@ struct MessageView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       if store.role == .user {
-        HStack {
+        HStack(alignment: .bottom, spacing: 8) {
           Spacer()
           
           VStack(alignment: .trailing, spacing: 8) {
@@ -36,13 +36,30 @@ struct MessageView: View {
             
             // Display text if present
             if !store.content.isEmpty {
-              Text(store.content)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color.colorGray)
-                .clipShape(RoundedRectangle(cornerRadius: 24))
-                .textSelection(.enabled)
-                .multilineTextAlignment(.leading)
+              VStack(alignment: .trailing, spacing: 8) {
+                Text(store.content)
+                  .padding(.horizontal, 16)
+                  .padding(.vertical, 12)
+                  .background(Color.colorGray)
+                  .clipShape(RoundedRectangle(cornerRadius: 24))
+                  .textSelection(.enabled)
+                  .multilineTextAlignment(.leading)
+                
+                // Resend button for failed messages
+                if store.canResend {
+                  Button(action: {
+                    store.send(.resend)
+                  }) {
+                    HStack {
+                      Text("Resend")
+                      
+                      Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 16))
+                    }
+                    .foregroundColor(.colorForeground)
+                  }
+                }
+              }
             }
           }
         }
@@ -51,7 +68,6 @@ struct MessageView: View {
           // Display reasoning if available
           if let reasoning = store.reasoning, !reasoning.isEmpty {
             ReasoningView(reasoning: reasoning)
-              .padding(.horizontal, 16)
               .padding(.top, 8)
           }
           
@@ -82,6 +98,16 @@ struct MessageView: View {
       store: Store(initialState: Message.State(
         role: .assistant,
         content: "I'm doing well, thank you! How can I help you today? What is up?"
+      )) {
+        Message()
+      }
+    )
+    
+    MessageView(
+      store: Store(initialState: Message.State(
+        role: .user,
+        content: "Can you help me with this error?",
+        canResend: true
       )) {
         Message()
       }
