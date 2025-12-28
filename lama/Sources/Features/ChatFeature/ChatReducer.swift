@@ -183,7 +183,8 @@ struct Chat {
         
         chatMessages = chatMessages.withDefaultSystemPrompt()
         
-        return .send(.startChatStream(chatMessages))
+        let enableWebSearch = userDefaultsService.isWebSearchEnabled()
+        return .send(.startChatStream(chatMessages, enableWebSearch: enableWebSearch))
         
       case .startChatStream(let chatMessages, let enableWebSearch):
         let temperature = userDefaultsService.getTemperature()
@@ -191,8 +192,12 @@ struct Chat {
         
         return .run { [model = state.model] send in
           do {
-            // Send web search started action if enabled
-            if enableWebSearch {
+            // Check if model supports web search (only compound models support it)
+            let modelSupportsWebSearch = model.contains("compound")
+            let actualWebSearchEnabled = enableWebSearch && modelSupportsWebSearch
+            
+            // Send web search started action only if web search is actually supported
+            if actualWebSearchEnabled {
               await send(.webSearchStarted)
             }
             
@@ -353,7 +358,8 @@ struct Chat {
         
         chatMessages = chatMessages.withDefaultSystemPrompt()
         
-        return .send(.startChatStream(chatMessages))
+        let enableWebSearch = userDefaultsService.isWebSearchEnabled()
+        return .send(.startChatStream(chatMessages, enableWebSearch: enableWebSearch))
         
       case .messages:
         return .none
@@ -375,12 +381,15 @@ struct Chat {
         return .none
         
       case .reasoningReceived(let reasoning):
-        state.pendingReasoning = reasoning
+        // Accumulate reasoning chunks during streaming
+        if !reasoning.isEmpty {
+          state.pendingReasoning = (state.pendingReasoning ?? "") + reasoning
+        }
         // Also update the last assistant message if it exists and doesn't have reasoning yet
         if let lastIndex = state.messages.indices.last,
            state.messages[lastIndex].role == .assistant,
            state.messages[lastIndex].reasoning == nil {
-          state.messages[lastIndex].reasoning = reasoning
+          state.messages[lastIndex].reasoning = state.pendingReasoning
         }
         return .none
       }

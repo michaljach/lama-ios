@@ -159,6 +159,7 @@ struct GroqChatRequest: Codable {
   let stream: Bool
   let tools: [GroqTool]?
   let includeReasoning: Bool?
+  let reasoningEffort: String?
   
   enum CodingKeys: String, CodingKey {
     case model
@@ -169,6 +170,7 @@ struct GroqChatRequest: Codable {
     case stream
     case tools
     case includeReasoning = "include_reasoning"
+    case reasoningEffort = "reasoning_effort"
   }
   
   init(
@@ -179,7 +181,8 @@ struct GroqChatRequest: Codable {
     topP: Double? = nil,
     stream: Bool,
     tools: [GroqTool]? = nil,
-    includeReasoning: Bool? = nil
+    includeReasoning: Bool? = nil,
+    reasoningEffort: String? = nil
   ) {
     self.model = model
     self.messages = messages
@@ -189,6 +192,7 @@ struct GroqChatRequest: Codable {
     self.stream = stream
     self.tools = tools
     self.includeReasoning = includeReasoning
+    self.reasoningEffort = reasoningEffort
   }
   
   func encode(to encoder: Encoder) throws {
@@ -211,6 +215,9 @@ struct GroqChatRequest: Codable {
     }
     if let includeReasoning = includeReasoning {
       try container.encode(includeReasoning, forKey: .includeReasoning)
+    }
+    if let reasoningEffort = reasoningEffort {
+      try container.encode(reasoningEffort, forKey: .reasoningEffort)
     }
   }
 }
@@ -345,6 +352,7 @@ struct GroqDelta: Codable {
   let content: String?
   let tool_calls: [GroqToolCall]?
   let executed_tools: [ExecutedTool]?
+  let reasoning: String?
 }
 
 struct GroqToolCall: Codable {

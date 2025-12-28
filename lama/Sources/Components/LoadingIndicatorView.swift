@@ -35,6 +35,7 @@ struct LoadingIndicatorView: View {
     }
     .padding(.horizontal)
     .padding(.vertical, 12)
+    .font(.caption)
     .onAppear {
       withAnimation(
         .easeInOut(duration: 1.5)

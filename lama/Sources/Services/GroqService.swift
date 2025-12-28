@@ -78,8 +78,20 @@ actor GroqService {
     
     let tools: [GroqTool]? = nil
     
-    // Only include reasoning for GPT-OSS models that support it
-    let shouldIncludeReasoning = modelToUse.contains("gpt-oss")
+    // Determine if reasoning is supported and set appropriate parameters
+    var includeReasoning: Bool? = nil
+    var reasoningEffort: String? = nil
+    
+    if modelToUse.contains("gpt-oss") {
+      // GPT-OSS models support reasoning
+      includeReasoning = true
+      // Use medium effort by default for GPT-OSS models
+      reasoningEffort = "medium"
+    } else if modelToUse.contains("qwen/qwen3") {
+      // Qwen 3 32B also supports reasoning
+      includeReasoning = true
+      reasoningEffort = "default"
+    }
     
     let groqRequest = GroqChatRequest(
       model: modelToUse,
@@ -89,7 +101,8 @@ actor GroqService {
       topP: topP,
       stream: true,
       tools: tools,
-      includeReasoning: shouldIncludeReasoning ? true : nil
+      includeReasoning: includeReasoning,
+      reasoningEffort: reasoningEffort
     )
     
     return try await performStreamingRequest(request: groqRequest)
@@ -131,6 +144,20 @@ actor GroqService {
     
     let tools: [GroqTool]? = nil  // Compound models handle tools natively, no need to specify
     
+    // Determine if reasoning is supported and set appropriate parameters
+    var includeReasoning: Bool? = nil
+    var reasoningEffort: String? = nil
+    
+    if modelToUse.contains("gpt-oss") {
+      // GPT-OSS models support reasoning
+      includeReasoning = true
+      reasoningEffort = "medium"
+    } else if modelToUse.contains("qwen/qwen3") {
+      // Qwen 3 32B also supports reasoning
+      includeReasoning = true
+      reasoningEffort = "default"
+    }
+    
     let groqRequest = GroqChatRequest(
       model: modelToUse,
       messages: messages,
@@ -138,7 +165,9 @@ actor GroqService {
       maxTokens: maxTokens,
       topP: topP,
       stream: false,
-      tools: tools
+      tools: tools,
+      includeReasoning: includeReasoning,
+      reasoningEffort: reasoningEffort
     )
     
     return try await performRequest(request: groqRequest)
@@ -320,8 +349,8 @@ actor GroqService {
     let executedTools = choice?.message?.executed_tools ?? choice?.delta?.executed_tools
     let sources = extractWebSearchSources(from: executedTools)
     
-    // Extract reasoning if available
-    let reasoning = choice?.message?.reasoning
+    // Extract reasoning if available (from either message or delta for streaming)
+    let reasoning = choice?.message?.reasoning ?? choice?.delta?.reasoning
     
     // Convert string content to MessageContent (keep it simple for streaming)
     let message = ChatMessage(role: .assistant, content: messageContentStr, toolCalls: toolCalls)

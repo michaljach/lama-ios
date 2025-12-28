@@ -6,49 +6,94 @@
 //
 
 import SwiftUI
+import MarkdownUI
 
 struct ReasoningView: View {
   let reasoning: String
-  @State private var isExpanded = false
+  @State private var isShowingSheet = false
+  
+  var previewText: String {
+    let stripped = stripMarkdown(reasoning)
+    let lines = stripped.split(separator: "\n", maxSplits: 2, omittingEmptySubsequences: false)
+    let preview = lines.prefix(2).joined(separator: "\n")
+    if lines.count > 2 {
+      return preview + "..."
+    }
+    return preview
+  }
+  
+  private func stripMarkdown(_ text: String) -> String {
+    var result = text
+    // Remove bold markers
+    result = result.replacingOccurrences(of: "\\*\\*(.+?)\\*\\*", with: "$1", options: .regularExpression)
+    // Remove italic markers
+    result = result.replacingOccurrences(of: "\\*(.+?)\\*", with: "$1", options: .regularExpression)
+    result = result.replacingOccurrences(of: "_(.+?)_", with: "$1", options: .regularExpression)
+    // Remove code markers
+    result = result.replacingOccurrences(of: "`(.+?)`", with: "$1", options: .regularExpression)
+    // Remove headers
+    result = result.replacingOccurrences(of: "^#+\\s+", with: "", options: .regularExpression)
+    // Remove links [text](url)
+    result = result.replacingOccurrences(of: "\\[(.+?)\\]\\(.+?\\)", with: "$1", options: .regularExpression)
+    return result
+  }
   
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Button(action: {
-        withAnimation(.easeInOut(duration: 0.2)) {
-          isExpanded.toggle()
-        }
-      }) {
+    Button(action: {
+      isShowingSheet = true
+    }) {
+      VStack(alignment: .leading, spacing: 4) {
         HStack {
           Image(systemName: "sparkles")
             .font(.caption)
-            .foregroundStyle(.orange)
           
           Text("Reasoning")
             .font(.caption)
             .fontWeight(.semibold)
-            .foregroundStyle(.orange)
-          
-          Spacer()
-          
-          Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-            .font(.caption)
-            .foregroundStyle(.orange)
         }
-        .padding(10)
-        .background(Color.orange.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-      }
-      
-      if isExpanded {
-        Text(reasoning)
-          .font(.caption)
+        
+        Text(previewText)
+          .font(.caption2)
           .foregroundStyle(.secondary)
-          .lineLimit(nil)
+          .lineLimit(2)
           .multilineTextAlignment(.leading)
-          .padding(10)
-          .background(Color.colorGray.opacity(0.5))
-          .clipShape(RoundedRectangle(cornerRadius: 8))
-          .transition(.opacity.combined(with: .move(edge: .top)))
+          .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      .padding(10)
+      .background(Color.colorGray)
+      .clipShape(RoundedRectangle(cornerRadius: 12))
+      .foregroundStyle(.colorForeground)
+    }
+    .sheet(isPresented: $isShowingSheet) {
+      ReasoningSheetView(reasoning: reasoning, isPresented: $isShowingSheet)
+    }
+  }
+}
+
+struct ReasoningSheetView: View {
+  let reasoning: String
+  @Binding var isPresented: Bool
+  
+  var body: some View {
+    NavigationStack {
+      ScrollView {
+        VStack(alignment: .leading, spacing: 16) {
+          Markdown(reasoning)
+            .multilineTextAlignment(.leading)
+            .textSelection(.enabled)
+            .markdownTableBorderStyle(.init(color: .colorGray))
+        }
+        .padding()
+      }
+      .navigationTitle("Reasoning")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .navigationBarTrailing) {
+          Button(action: { isPresented = false }) {
+            Image(systemName: "xmark")
+              .foregroundStyle(.secondary)
+          }
+        }
       }
     }
   }

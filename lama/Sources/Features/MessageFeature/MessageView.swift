@@ -68,7 +68,7 @@ struct MessageView: View {
           // Display reasoning if available
           if let reasoning = store.reasoning, !reasoning.isEmpty {
             ReasoningView(reasoning: reasoning)
-              .padding(.top, 8)
+              .padding(.vertical, 8)
           }
           
           // Display main content

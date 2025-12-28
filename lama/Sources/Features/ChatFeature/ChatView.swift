@@ -82,6 +82,7 @@ struct ChatView: View {
   ChatView(
     store: Store(initialState: {
       var state = Chat.State(id: UUID())
+      state.loadingState = .loading
       state.messages = [
         Message.State(
           role: .user,
