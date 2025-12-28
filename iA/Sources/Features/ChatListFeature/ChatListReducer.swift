@@ -76,30 +76,24 @@ struct ChatList {
         return .none
         
       case .path(.element(id: _, action: _)):
-        // Sync all changes from path to chats collection
-        for pathElement in state.path {
-          if case let .chat(pathChat) = pathElement {
-            // Update the chats collection with the current path chat state
-            if state.chats.contains(where: { $0.id == pathChat.id }) {
-              state.chats[id: pathChat.id] = pathChat
-            }
-          }
-        }
+        // Don't sync on every element action - this causes rapid updates
+        // The state will be synced when the view reappears or on navigation
         return .none
 
       case .path(.popFrom):
-        // Sync all pending changes before removing from navigation stack
+        // Sync remaining elements and clean up empty chats after navigation
         for pathElement in state.path {
           if case let .chat(chat) = pathElement {
-            state.chats[id: chat.id] = chat
+            if state.chats.contains(where: { $0.id == chat.id }) {
+              state.chats[id: chat.id] = chat
+            }
           }
         }
-        // Ensure models are preserved in all chats
-        for index in state.chats.indices {
-          state.chats[index].availableModels = state.availableModels
+        // Clean up empty chats that were never populated
+        state.chats.removeAll { chat in
+          chat.messages.isEmpty
         }
-        // When navigating back, clean up empty chats
-        return .send(.removeEmptyChats)
+        return .none
 
       case .path:
         return .none
