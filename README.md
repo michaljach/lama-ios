@@ -1,41 +1,47 @@
-# PGPT (Private GPT) iOS
+# iA - AI Chat
 
-A modern iOS chat application built with SwiftUI and The Composable Architecture that connects to [Ollama](https://ollama.ai/) for AI-powered conversations with web search capabilities.
+A modern iOS chat application built with SwiftUI and The Composable Architecture that connects to [Groq API](https://console.groq.com/) for lightning-fast AI-powered conversations with web search and reasoning capabilities.
 
 ## Features
 
 - 💬 **Multiple Chat Conversations** - Create and manage multiple chat sessions
-- 🚀 **Streaming Responses** - Real-time streaming of AI responses as they're generated
-- 🔍 **Web Search Integration** - Built-in web search functionality powered by Ollama
-- ⚙️ **Configurable Settings** - Customize Ollama endpoint, model, temperature, and max tokens
-- 🎯 **Model Selection** - Choose from available Ollama models
-- 🔐 **Authentication Support** - Secure API token authentication
+- 🚀 **Real-time Streaming** - Lightning-fast streaming responses from Groq models
+- 🧠 **AI Reasoning** - Support for models with advanced reasoning capabilities (GPT-OSS, Qwen 3)
+- 🔍 **Web Search Integration** - Built-in web search using Groq's Compound models for current information
+- 🖼️ **Vision Support** - Analyze and discuss images using vision-capable models
+- ⚙️ **Configurable Settings** - Customize model, temperature, top-p, and max tokens
+- 🎯 **Model Selection** - Choose from a variety of Groq models including:
+  - Mixtral-8x7b (fast and efficient)
+  - Qwen models with reasoning capabilities
+  - GPT-OSS models with advanced reasoning
+  - Llama models for vision tasks
+- 🔐 **Secure Authentication** - Groq API key authentication
 - 🎨 **Modern UI** - Clean, native SwiftUI interface with animated loading indicators
-- 📱 **iOS Native** - Built specifically for iOS 17.0+ with native SwiftUI components
-- 🛑 **Stop Generation** - Ability to stop ongoing AI responses
-- 🔄 **Chat Management** - Create, delete, and navigate between conversations
-- 🌡️ **Advanced Parameters** - Control temperature and token limits for fine-tuned responses
+- 📱 **iOS Native** - Built for iOS 17.0+ with native SwiftUI components
+- 🛑 **Stop Generation** - Stop ongoing AI responses
+- 🌡️ **Advanced Parameters** - Fine-tune temperature, top-p, and token limits
+- 💾 **Chat History** - Persistent chat management and navigation
 
 ## Requirements
 
 - iOS 17.0+
 - Xcode 15.0+
 - Swift 5.9+
-- An [Ollama](https://ollama.ai/) server running locally or remotely
+- A [Groq API](https://console.groq.com/) key (get one free at https://console.groq.com/)
 
 ## Installation
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/lama.git
-   cd lama
+   git clone https://github.com/yourusername/iA.git
+   cd iA
    ```
 
 2. Open the project in Xcode:
 
    ```bash
-   open lama.xcodeproj
+   open iA.xcodeproj
    ```
 
 3. Build and run the project in Xcode (⌘R)
@@ -44,69 +50,48 @@ The Swift Package Manager dependencies will be automatically resolved when you b
 
 ## Setup
 
+### Getting a Groq API Key
+
+1. Visit [https://console.groq.com/](https://console.groq.com/)
+2. Sign up for a free account
+3. Navigate to the API Keys section
+4. Create a new API key and copy it
+
 ### API Key Configuration
 
 To keep your Groq API key secure and prevent it from being committed to the repository:
 
-1. **Edit the config file:**
+1. **Edit the Settings in the app:**
 
-   - Open `lama/config.json` in Xcode
-   - Replace `YOUR_GROQ_API_KEY_HERE` with your actual Groq API key:
+   - Launch the app
+   - Tap the Settings icon (⚙️) in the navigation bar
+   - Paste your Groq API key in the "API Key" field
+   - The key will be saved securely in your device's UserDefaults
 
-   ```json
-   {
-     "groqApiKey": "gsk_your_actual_api_key_here"
-   }
-   ```
-
-2. **Build and run the app** - the API key will be read from `config.json` automatically
-
-**Note:** `lama/config.json` is already in `.gitignore` and will never be committed to the repository.
-
-### Using Ollama Cloud or Local Server
-
-The app works with both Ollama's cloud service and local installations:
-
-#### Option 1: Ollama Cloud (Default)
-
-The app comes pre-configured to use Ollama's cloud service at `https://ollama.com` with authentication included. No additional setup is required!
-
-#### Option 2: Local Ollama Server
-
-To use a local Ollama installation:
-
-1. **Install Ollama**:
-
-   - Visit [ollama.ai](https://ollama.ai/) and download Ollama for your system
-   - Follow the installation instructions for your platform
-
-2. **Pull a Model**:
-
-   ```bash
-   ollama pull llama2
-   # or
-   ollama pull mistral
-   # or any other model you prefer
-   ```
-
-3. **Start Ollama Server**:
-   ```bash
-   ollama serve
-   ```
+**Note:** Your API key is stored locally on your device and never uploaded to any server except Groq's API servers.
 
 ### Configuring the App
 
 1. Launch the app on your iOS device or simulator
-2. Tap the settings gear icon (⚙️) in the top-left corner
+2. Tap the Settings icon (⚙️) in the navigation bar
 3. Configure your preferences:
-   - **Ollama Endpoint**: Set to `https://ollama.com` (default) or your local server URL
-   - **Default Model**: Choose your preferred model (default: `gpt-oss:120b`)
-   - **Temperature**: Adjust response creativity (0.0 - 1.0, default: 0.7)
-   - **Max Tokens**: Set maximum response length (default: 640)
-   - **Web Search**: Enable/disable web search functionality (default: enabled)
+   - **API Key**: Enter your Groq API key
+   - **Default Model**: Choose your preferred model
+   - **Temperature**: Adjust response creativity (0.0 - 2.0, default: 0.7)
+   - **Max Tokens**: Set maximum response length (default: 1024)
 4. Select your preferred model from the model picker when creating a new chat
 
-**Note**: If running on a simulator with a local Ollama server, make sure your Ollama server is accessible from the simulator's network. You may need to use your Mac's IP address instead of `localhost`.
+### Available Models
+
+The app supports various Groq models:
+
+- **Mixtral-8x7b-32768** - Fast, general-purpose model (default)
+- **Llama-3.1-70b** - Powerful reasoning and analysis
+- **Gemma-7b** - Lightweight and efficient
+- **Meta-Llama-Scout-17b** - Vision capabilities for image analysis
+- **Qwen/Qwen3-32B** - Advanced reasoning and multilingual support
+- **Mistral-8x7b** - Efficient and fast
+- **GPT-OSS models** - Advanced reasoning capabilities
 
 ## Usage
 
@@ -140,45 +125,49 @@ This project is built using **The Composable Architecture (TCA)**, a powerful st
 ### Project Structure
 
 ```
-lama/
+iA/
 ├── Sources/
 │   ├── Features/
-│   │   ├── ChatFeature/           # Individual chat conversation
+│   │   ├── ChatFeature/           # Individual chat conversation with streaming
 │   │   ├── ChatListFeature/       # List of all chats
-│   │   ├── MessageFeature/        # Individual message display
+│   │   ├── MessageFeature/        # Individual message display with reasoning
 │   │   ├── MessageInputFeature/   # Message input component
-│   │   └── SettingsFeature/       # App settings and configuration
+│   │   └── SettingsFeature/       # App settings and API configuration
 │   ├── Services/
-│   │   ├── OllamaService.swift    # Ollama API client with streaming support
-│   │   ├── OllamaModels.swift     # Ollama data models and types
+│   │   ├── GroqService.swift      # Groq API client with streaming & web search
+│   │   ├── GroqModels.swift       # API data models and types
 │   │   └── UserDefaultsService.swift  # User preferences management
 │   └── Components/
 │       ├── ModelPicker.swift       # Model selection component
-│       ├── NoChatsMessage.swift    # Empty state component
-│       └── LoadingIndicatorView.swift  # Animated loading indicator
+│       ├── LoadingIndicatorView.swift  # Animated loading indicator
+│       ├── ReasoningView.swift    # Display reasoning from models
+│       ├── WebSearchSourcesView.swift # Display web search results
+│       └── NoChatsMessage.swift    # Empty state component
 ├── Environment.swift               # Dependency injection setup
-└── lamaApp.swift                   # App entry point
+└── App.swift                       # App entry point
 ```
 
-### Key Components
+### Key Features
 
-- **OllamaService**: Actor-based service for communicating with the Ollama API, supporting:
+- **GroqService**: Actor-based service for Groq API communication with:
   - Streaming and non-streaming chat completions
-  - Text generation with context preservation
-  - Model listing and information retrieval
-  - Web search integration via Ollama's web search API
-  - Bearer token authentication for secure API access
-- **UserDefaultsService**: Manages user preferences including endpoint, model selection, temperature, max tokens, and web search settings
-- **Feature Modules**: Each feature (Chat, ChatList, Settings, etc.) contains its own reducer and view following TCA patterns
-- **Dependency Injection**: Uses TCA's dependency system for testability and modularity
+  - Automatic model selection for different capabilities (vision, reasoning, web search)
+  - Web search integration via Groq's Compound models
+  - Reasoning support for advanced models
+  - Bearer token authentication
+- **UserDefaultsService**: Manages user preferences including API key, model selection, temperature, and token limits
+
+- **Feature Modules**: Each feature (Chat, ChatList, Settings, etc.) is self-contained following TCA patterns
+
+- **Composable Architecture**: Uses TCA for predictable state management and testability
 
 ## Technologies
 
 - **SwiftUI** - Modern declarative UI framework for iOS 17.0+
 - **The Composable Architecture** - State management and architecture framework
 - **Swift Concurrency** - Async/await for asynchronous operations and actor-based services
-- **Ollama API** - AI model inference with support for both cloud and local servers
-- **Ollama Web Search API** - Integrated web search capabilities
+- **Groq API** - Lightning-fast AI inference with multiple model options
+- **Web Search** - Built-in web search via Groq's Compound models
 
 ## Development
 
@@ -192,7 +181,7 @@ The project uses Swift Package Manager with the following main dependencies:
 
 ```bash
 # Build the project
-xcodebuild -project lama.xcodeproj -scheme lama -sdk iphonesimulator
+xcodebuild -project iA.xcodeproj -scheme iA -sdk iphonesimulator
 
 # Or simply build in Xcode (⌘B)
 ```
@@ -203,7 +192,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Repository
 
-This project is hosted at: [https://github.com/michaljach/lama-ios](https://github.com/michaljach/lama-ios)
+This project is hosted at: [https://github.com/michaljach/iA-ios](https://github.com/michaljach/iA-ios)
 
 ## License
 
@@ -212,4 +201,4 @@ This project is open source and available under the [MIT License](LICENSE).
 ## Acknowledgments
 
 - Built with [The Composable Architecture](https://github.com/pointfreeco/swift-composable-architecture) by [Point-Free](https://www.pointfree.co/)
-- Powered by [Ollama](https://ollama.ai/) for local AI inference
+- Powered by [Groq](https://groq.com/) for lightning-fast AI inference

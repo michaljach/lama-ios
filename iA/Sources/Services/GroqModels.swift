@@ -323,6 +323,23 @@ struct GroqChatResponse: Codable {
   let choices: [GroqChoice]
   let usage: GroqUsage?
   let created: Int?
+  
+  enum CodingKeys: String, CodingKey {
+    case id
+    case model
+    case choices
+    case usage
+    case created
+  }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decodeIfPresent(String.self, forKey: .id)
+    model = try container.decodeIfPresent(String.self, forKey: .model)
+    choices = try container.decodeIfPresent([GroqChoice].self, forKey: .choices) ?? []
+    usage = try container.decodeIfPresent(GroqUsage.self, forKey: .usage)
+    created = try container.decodeIfPresent(Int.self, forKey: .created)
+  }
 }
 
 struct GroqChoice: Codable {
@@ -337,6 +354,14 @@ struct GroqChoice: Codable {
     case delta
     case finishReason = "finish_reason"
   }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    index = try container.decodeIfPresent(Int.self, forKey: .index)
+    message = try container.decodeIfPresent(GroqMessage.self, forKey: .message)
+    delta = try container.decodeIfPresent(GroqDelta.self, forKey: .delta)
+    finishReason = try container.decodeIfPresent(String.self, forKey: .finishReason)
+  }
 }
 
 struct GroqMessage: Codable {
@@ -345,6 +370,23 @@ struct GroqMessage: Codable {
   let tool_calls: [GroqToolCall]?
   let executed_tools: [ExecutedTool]?
   let reasoning: String?
+  
+  enum CodingKeys: String, CodingKey {
+    case role
+    case content
+    case tool_calls
+    case executed_tools
+    case reasoning
+  }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    role = try container.decode(String.self, forKey: .role)
+    content = try container.decodeIfPresent(String.self, forKey: .content)
+    tool_calls = try container.decodeIfPresent([GroqToolCall].self, forKey: .tool_calls)
+    executed_tools = try container.decodeIfPresent([ExecutedTool].self, forKey: .executed_tools)
+    reasoning = try container.decodeIfPresent(String.self, forKey: .reasoning)
+  }
 }
 
 struct GroqDelta: Codable {
@@ -353,17 +395,58 @@ struct GroqDelta: Codable {
   let tool_calls: [GroqToolCall]?
   let executed_tools: [ExecutedTool]?
   let reasoning: String?
+  
+  enum CodingKeys: String, CodingKey {
+    case role
+    case content
+    case tool_calls
+    case executed_tools
+    case reasoning
+  }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    role = try container.decodeIfPresent(String.self, forKey: .role)
+    content = try container.decodeIfPresent(String.self, forKey: .content)
+    tool_calls = try container.decodeIfPresent([GroqToolCall].self, forKey: .tool_calls)
+    executed_tools = try container.decodeIfPresent([ExecutedTool].self, forKey: .executed_tools)
+    reasoning = try container.decodeIfPresent(String.self, forKey: .reasoning)
+  }
 }
 
 struct GroqToolCall: Codable {
   let id: String?
   let type: String?
   let function: GroqToolCallFunction
+  
+  enum CodingKeys: String, CodingKey {
+    case id
+    case type
+    case function
+  }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decodeIfPresent(String.self, forKey: .id)
+    type = try container.decodeIfPresent(String.self, forKey: .type)
+    function = try container.decode(GroqToolCallFunction.self, forKey: .function)
+  }
 }
 
 struct GroqToolCallFunction: Codable {
   let name: String
   let arguments: String
+  
+  enum CodingKeys: String, CodingKey {
+    case name
+    case arguments
+  }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    name = try container.decode(String.self, forKey: .name)
+    arguments = try container.decodeIfPresent(String.self, forKey: .arguments) ?? ""
+  }
 }
 
 // MARK: - Executed Tools (for web search results)
@@ -371,10 +454,30 @@ struct GroqToolCallFunction: Codable {
 struct ExecutedTool: Codable {
   let type: String?
   let search_results: SearchResultsContainer?
+  
+  enum CodingKeys: String, CodingKey {
+    case type
+    case search_results
+  }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    type = try container.decodeIfPresent(String.self, forKey: .type)
+    search_results = try container.decodeIfPresent(SearchResultsContainer.self, forKey: .search_results)
+  }
 }
 
 struct SearchResultsContainer: Codable {
   let results: [SearchResult]?
+  
+  enum CodingKeys: String, CodingKey {
+    case results
+  }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    results = try container.decodeIfPresent([SearchResult].self, forKey: .results)
+  }
 }
 
 struct SearchResult: Codable {
@@ -389,6 +492,14 @@ struct SearchResult: Codable {
     case content
     case relevance_score
   }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    title = try container.decodeIfPresent(String.self, forKey: .title)
+    url = try container.decodeIfPresent(String.self, forKey: .url)
+    content = try container.decodeIfPresent(String.self, forKey: .content)
+    relevance_score = try container.decodeIfPresent(Double.self, forKey: .relevance_score)
+  }
 }
 
 struct GroqUsage: Codable {
@@ -400,6 +511,13 @@ struct GroqUsage: Codable {
     case promptTokens = "prompt_tokens"
     case completionTokens = "completion_tokens"
     case totalTokens = "total_tokens"
+  }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    promptTokens = try container.decodeIfPresent(Int.self, forKey: .promptTokens)
+    completionTokens = try container.decodeIfPresent(Int.self, forKey: .completionTokens)
+    totalTokens = try container.decodeIfPresent(Int.self, forKey: .totalTokens)
   }
 }
 

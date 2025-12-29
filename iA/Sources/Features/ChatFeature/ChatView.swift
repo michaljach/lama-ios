@@ -49,6 +49,11 @@ struct ChatView: View {
                 .padding(.top, 8)
                 .id("sources")
             }
+            
+            // Anchor point for scrolling to bottom
+            Color.clear
+              .frame(height: 0)
+              .id("bottom")
           }
           .scrollTargetLayout()
         }
@@ -56,8 +61,10 @@ struct ChatView: View {
         .onChange(of: store.messages.count) { _, newCount in
           // Scroll to the last message only when a user message is added
           if newCount > 0, let lastMessage = store.messages.last, lastMessage.role == .user {
-            withAnimation {
-              scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+              withAnimation(.easeInOut(duration: 0.2)) {
+                scrollProxy.scrollTo("bottom", anchor: .bottom)
+              }
             }
           }
         }
