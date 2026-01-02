@@ -46,6 +46,7 @@ struct ChatView: View {
           .cornerRadius(12)
           .padding(.horizontal, 16)
           .padding(.top, 8)
+          .padding(.bottom, 8)
         }
         .transition(.move(edge: .top).combined(with: .opacity))
       }
@@ -126,7 +127,9 @@ struct ChatView: View {
 #Preview {
   ChatView(
     store: Store(initialState: {
-      var state = Chat.State(id: UUID())
+      var state = Chat.State(
+        id: UUID()
+      )
       return state
     }()) {
       Chat()

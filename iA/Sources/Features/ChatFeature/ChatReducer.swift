@@ -41,13 +41,21 @@ struct Chat {
     var messageInputState = MessageInput.State()
     var modelPickerState = ModelPicker.State()
     var messages: IdentifiedArrayOf<Message.State> = []
-    var isLoading: Bool = false
     var errorMessage: String?
     
     // Additional properties for compatibility with existing tests
     var loadingState: LoadingState = .idle
     var model: String = "models/gemini-3-flash-preview"
     var isShowingWebSearchUI: Bool = false
+    
+    var isLoading: Bool {
+      switch loadingState {
+      case .idle, .error:
+        return false
+      case .loading, .webSearching:
+        return true
+      }
+    }
     
     var title: String {
       if let userMessage = messages.first(where: { $0.role == .user }) {
@@ -72,13 +80,14 @@ struct Chat {
     case messageInput(MessageInput.Action)
     case modelPicker(ModelPicker.Action)
     case message(IdentifiedActionOf<Message>)
-    case sendMessage(String)
+    case sendMessage(String, images: [UIImage] = [])
     case messageSent(String)
     case streamToken(String, messageId: UUID)
     case streamComplete([WebSource], messageId: UUID)
     case messageError(String)
     case clearError
     case modelSelected(String)
+    case stopGeneration
   }
   
   var body: some Reducer<State, Action> {
@@ -91,9 +100,15 @@ struct Chat {
         
         
         let webSearchEnabled = UserDefaults.standard.bool(forKey: "webSearchEnabled")
-        state.isLoading = true
         state.loadingState = webSearchEnabled ? .webSearching : .loading
+        state.messageInputState.isLoading = true
         state.errorMessage = nil
+        
+        // Clear any existing canResend flags
+        for index in state.messages.indices {
+          state.messages[index].canResend = false
+        }
+        
         
         let userMessage = Message.State(
           id: UUID(),
@@ -147,6 +162,10 @@ struct Chat {
             await send(.messageError(error.localizedDescription))
           }
         }
+        .cancellable(id: "stream")
+        
+      case .messageInput(.delegate(.stopGeneration)):
+        return .send(.stopGeneration)
         
       case .messageInput:
         return .none
@@ -154,19 +173,34 @@ struct Chat {
       case .modelPicker:
         return .none
         
+      case .message(.element(id: let id, action: .delegate(.resendMessage(let content, let images)))):
+        // Clear canResend from the message
+        if var message = state.messages[id: id] {
+          message.canResend = false
+          state.messages[id: id] = message
+        }
+        // Resend the message with images
+        return .send(.sendMessage(content, images: images))
+        
       case .message:
         return .none
         
-      case .sendMessage(let message):
+      case .sendMessage(let message, let images):
         let webSearchEnabled = UserDefaults.standard.bool(forKey: "webSearchEnabled")
-        state.isLoading = true
         state.loadingState = webSearchEnabled ? .webSearching : .loading
+        state.messageInputState.isLoading = true
         state.errorMessage = nil
+        
+        // Clear any existing canResend flags
+        for index in state.messages.indices {
+          state.messages[index].canResend = false
+        }
         
         let userMessage = Message.State(
           id: UUID(),
           role: .user,
-          content: message
+          content: message,
+          images: images
         )
         state.messages.append(userMessage)
         
@@ -209,6 +243,7 @@ struct Chat {
             await send(.messageError(error.localizedDescription))
           }
         }
+        .cancellable(id: "stream")
         
       case .messageSent:
         state.messageInputState.inputText = ""
@@ -230,14 +265,22 @@ struct Chat {
         }
         message.sources = sources
         state.messages[id: messageId] = message
-        state.isLoading = false
         state.loadingState = .idle
+        state.messageInputState.isLoading = false
         return .none
         
       case .messageError(let error):
-        state.isLoading = false
         state.loadingState = .error(error)
+        state.messageInputState.isLoading = false
         state.errorMessage = error
+        
+        // Mark last user message as resendable
+        if let lastUserMessage = state.messages.last(where: { $0.role == .user }) {
+          var message = lastUserMessage
+          message.canResend = true
+          state.messages[id: message.id] = message
+        }
+        
         return .none
         
       case .clearError:
@@ -248,6 +291,19 @@ struct Chat {
         state.model = model
         state.modelPickerState.selectedModel = model
         return .none
+        
+      case .stopGeneration:
+        state.loadingState = .idle
+        state.messageInputState.isLoading = false
+        
+        // Mark last user message as resendable
+        if let lastUserMessage = state.messages.last(where: { $0.role == .user }) {
+          var message = lastUserMessage
+          message.canResend = true
+          state.messages[id: message.id] = message
+        }
+        
+        return .cancel(id: "stream")
       }
     }
     .forEach(\.messages, action: \.message) {

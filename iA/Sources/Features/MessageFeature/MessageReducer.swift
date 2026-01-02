@@ -41,13 +41,33 @@ struct Message {
     case resend
     case showSources
     case sources(PresentationAction<Sources.Action>)
+    case delegate(Delegate)
+    
+    enum Delegate: Equatable {
+      case resendMessage(String, images: [UIImage])
+    }
+    
+    static func == (lhs: Action, rhs: Action) -> Bool {
+      switch (lhs, rhs) {
+      case (.resend, .resend):
+        return true
+      case (.showSources, .showSources):
+        return true
+      case (.sources(let a), .sources(let b)):
+        return a == b
+      case (.delegate(let a), .delegate(let b)):
+        return a == b
+      default:
+        return false
+      }
+    }
   }
   
   var body: some Reducer<State, Action> {
     Reduce { state, action in
       switch action {
       case .resend:
-        return .none
+        return .send(.delegate(.resendMessage(state.content, images: state.images)))
         
       case .showSources:
         // Only show if not already showing
@@ -58,6 +78,9 @@ struct Message {
         return .none
         
       case .sources:
+        return .none
+        
+      case .delegate:
         return .none
       }
     }

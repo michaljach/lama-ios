@@ -116,7 +116,7 @@ struct MessageInputView: View {
                 .foregroundStyle(Color.colorForegroundInverse)
                 .background(Circle().fill(Color.colorBlue))
             }
-            .disabled(store.inputText.trimmingCharacters(in: .whitespaces).isEmpty)
+            .disabled(store.inputText.trimmingCharacters(in: .whitespaces).isEmpty && store.selectedImages.isEmpty)
           }
         }
         .padding(.trailing, 10)

@@ -39,6 +39,26 @@ struct MessageView: View {
                 .background(Color.colorGray)
                 .clipShape(Capsule())
             }
+            
+            // Resend button
+            if store.canResend {
+              Button {
+                store.send(.resend)
+              } label: {
+                HStack(spacing: 6) {
+                  Image(systemName: "arrow.clockwise")
+                    .font(.caption)
+                  Text("Resend")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                }
+                .foregroundColor(.colorBlue)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+                .background(Color.colorBlue.opacity(0.1))
+                .cornerRadius(8)
+              }
+            }
           }
         }
       } else {
