@@ -21,7 +21,7 @@ struct Settings {
     var availableModels: [AIModel] = []
     var isLoadingModels: Bool = false
     var googleAIAPIKey: String = ""
-    var webSearchEnabled: Bool = false
+    var webSearchEnabled: Bool = true
 
     init(userDefaultsService: UserDefaultsService = .liveValue) {
       // Load from UserDefaults service
@@ -29,7 +29,9 @@ struct Settings {
       self.temperature = userDefaultsService.getTemperature()
       self.maxTokens = userDefaultsService.getMaxTokens()
       self.googleAIAPIKey = UserDefaults.standard.string(forKey: "googleAIAPIKey") ?? ""
-      self.webSearchEnabled = UserDefaults.standard.bool(forKey: "webSearchEnabled")
+      self.webSearchEnabled = UserDefaults.standard.object(forKey: "webSearchEnabled") != nil 
+        ? UserDefaults.standard.bool(forKey: "webSearchEnabled") 
+        : true
     }
   }
 

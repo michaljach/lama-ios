@@ -22,7 +22,7 @@ struct SettingsView: View {
         Text("Google AI")
       } footer: {
         VStack(alignment: .leading, spacing: 8) {
-          Text("Get your API key at aistudio.google.com")
+          Text("Get your API key at [aistudio.google.com](https://aistudio.google.com)")
           Text("Your API key is stored securely on your device and never shared.")
         }
       }

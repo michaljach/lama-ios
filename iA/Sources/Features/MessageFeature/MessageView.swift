@@ -78,6 +78,16 @@ struct MessageView: View {
                 .background(Color.colorForeground.opacity(0.08))
                 .cornerRadius(8)
             }
+            .markdownTableBorderStyle(
+              .init(
+                .horizontalBorders,
+                color: .colorGray,
+                strokeStyle: .init(lineWidth: 1)
+              )
+            )
+            .markdownTableBackgroundStyle(
+              .alternatingRows(Color.clear, Color.clear)
+            )
           
           // Compact sources bar
           if !store.sources.isEmpty {
