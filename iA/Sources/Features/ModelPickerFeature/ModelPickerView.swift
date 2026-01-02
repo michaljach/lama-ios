@@ -1,16 +1,15 @@
 //
-//  ModelPicker.swift
+//  ModelPickerView.swift
 //  lama
 //
-//  Created by Michal Jach on 31/10/2025.
+//  Created by Michal Jach on 02/01/2026.
 //
 
 import ComposableArchitecture
 import SwiftUI
 
-struct ModelPicker: View {
-  let store: StoreOf<Chat>
-  let isDisabled: Bool
+struct ModelPickerView: View {
+  @Bindable var store: StoreOf<ModelPicker>
 
   var body: some View {
     if !store.availableModels.isEmpty {
@@ -21,7 +20,7 @@ struct ModelPicker: View {
           } label: {
             HStack {
               Text(model)
-              if model == store.model {
+              if model == store.selectedModel {
                 Image(systemName: "checkmark")
               }
               
@@ -45,19 +44,30 @@ struct ModelPicker: View {
               }
             }
           }
-          .disabled(isDisabled)
+          .disabled(store.isDisabled)
         }
       } label: {
         HStack(spacing: 4) {
-          Text(store.model)
+          Text(store.selectedModel)
             .font(.headline)
             .padding(.leading, 6)
           Image(systemName: "chevron.down")
             .font(.caption)
         }
       }
-      .disabled(isDisabled)
-      .opacity(isDisabled ? 0.5 : 1.0)
+      .disabled(store.isDisabled)
+      .opacity(store.isDisabled ? 0.5 : 1.0)
     }
   }
+}
+
+#Preview {
+  ModelPickerView(
+    store: Store(initialState: ModelPicker.State(
+      selectedModel: "groq/compound",
+      availableModels: ["groq/compound", "mixtral-8x7b-32768"]
+    )) {
+      ModelPicker()
+    }
+  )
 }

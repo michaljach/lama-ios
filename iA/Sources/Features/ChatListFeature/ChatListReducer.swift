@@ -10,7 +10,8 @@ import Foundation
 
 @Reducer
 struct ChatList {
-  @Dependency(\.groqService) var groqService
+  @Dependency(\.googleAIService) var googleAIService
+  
   @Reducer
   enum Path {
     case chat(Chat)
@@ -53,7 +54,7 @@ struct ChatList {
         state.isLoadingModels = true
         return .run { send in
           do {
-            let models = try await GroqService().listModels()
+            let models = try await googleAIService.listModels()
             await send(.modelsLoaded(models))
           } catch {
             await send(.modelsLoadError(error.localizedDescription))
@@ -66,7 +67,7 @@ struct ChatList {
         
         // Sync models to all chats in collection
         for index in state.chats.indices {
-          state.chats[index].availableModels = models
+          state.chats[index].modelPickerState.availableModels = models
         }
         
         return .none
@@ -81,7 +82,7 @@ struct ChatList {
         return .none
 
       case .path(.popFrom):
-        // Sync remaining elements and clean up empty chats after navigation
+        // Sync remaining elements after navigation
         for pathElement in state.path {
           if case let .chat(chat) = pathElement {
             if state.chats.contains(where: { $0.id == chat.id }) {
@@ -89,20 +90,12 @@ struct ChatList {
             }
           }
         }
-        // Clean up empty chats that were never populated
-        state.chats.removeAll { chat in
-          chat.messages.isEmpty
-        }
         return .none
 
       case .path:
         return .none
 
       case .removeEmptyChats:
-        // Remove chats with no visible messages
-        state.chats.removeAll { chat in
-          chat.messages.isEmpty
-        }
         return .none
 
       case .deleteChat(let id):
@@ -112,7 +105,7 @@ struct ChatList {
       case .newChatButtonTapped:
         let newChatId = UUID()
         var newChatItem = Chat.State(id: newChatId)
-        newChatItem.availableModels = state.availableModels
+        newChatItem.modelPickerState.availableModels = state.availableModels
         state.chats.insert(newChatItem, at: 0)
         state.path.append(.chat(newChatItem))
         return .none

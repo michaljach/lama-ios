@@ -3,7 +3,7 @@
   <h1 style="display: inline-block; vertical-align: middle;">iA - AI Chat</h1>
 </div>
 
-A modern iOS chat application built with SwiftUI and The Composable Architecture that connects to [Groq API](https://console.groq.com/) for lightning-fast AI-powered conversations with web search and reasoning capabilities.
+A modern iOS chat application built with SwiftUI and The Composable Architecture that connects to [Google AI (Gemini)](https://ai.google.dev/) for lightning-fast AI-powered conversations with advanced reasoning capabilities.
 
 ## Preview
 
@@ -14,21 +14,19 @@ A modern iOS chat application built with SwiftUI and The Composable Architecture
 ## Features
 
 - 💬 **Multiple Chat Conversations** - Create and manage multiple chat sessions
-- 🚀 **Real-time Streaming** - Lightning-fast streaming responses from Groq models
-- 🧠 **AI Reasoning** - Support for models with advanced reasoning capabilities (GPT-OSS, Qwen 3)
-- 🔍 **Web Search Integration** - Built-in web search using Groq's Compound models for current information
-- 🖼️ **Vision Support** - Analyze and discuss images using vision-capable models
-- ⚙️ **Configurable Settings** - Customize model, temperature, top-p, and max tokens
-- 🎯 **Model Selection** - Choose from a variety of Groq models including:
-  - Mixtral-8x7b (fast and efficient)
-  - Qwen models with reasoning capabilities
-  - GPT-OSS models with advanced reasoning
-  - Llama models for vision tasks
-- 🔐 **Secure Authentication** - Groq API key authentication
+- 🚀 **Google AI (Gemini)** - Use Google's most powerful AI models
+- 🧠 **Advanced Reasoning** - Access Gemini's advanced reasoning capabilities
+- ⚙️ **Configurable Settings** - Customize model, temperature, and max tokens
+- 🎯 **Model Selection** - Choose from latest Gemini models:
+  - **Gemini 2.5 Flash** - Fast and efficient
+  - **Gemini 2.5 Pro** - Advanced reasoning
+  - **Gemini 3 Flash** - Frontier-class performance
+  - **Gemini 3 Pro** - Most intelligent model
+- 🔐 **Secure Authentication** - API key authentication with local device storage only
 - 🎨 **Modern UI** - Clean, native SwiftUI interface with animated loading indicators
 - 📱 **iOS Native** - Built for iOS 17.0+ with native SwiftUI components
 - 🛑 **Stop Generation** - Stop ongoing AI responses
-- 🌡️ **Advanced Parameters** - Fine-tune temperature, top-p, and token limits
+- 🌡️ **Advanced Parameters** - Fine-tune temperature and token limits
 - 💾 **Chat History** - Persistent chat management and navigation
 
 ## Requirements
@@ -36,7 +34,7 @@ A modern iOS chat application built with SwiftUI and The Composable Architecture
 - iOS 17.0+
 - Xcode 15.0+
 - Swift 5.9+
-- A [Groq API](https://console.groq.com/) key (get one free at https://console.groq.com/)
+- A [Google AI Studio](https://aistudio.google.com/apikey) API key (free at https://aistudio.google.com/apikey)
 
 ## Installation
 
@@ -59,48 +57,44 @@ The Swift Package Manager dependencies will be automatically resolved when you b
 
 ## Setup
 
-### Getting a Groq API Key
+### Getting a Google AI API Key
 
-1. Visit [https://console.groq.com/](https://console.groq.com/)
-2. Sign up for a free account
-3. Navigate to the API Keys section
-4. Create a new API key and copy it
+1. Visit [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+2. Sign in with your Google account (create one if needed)
+3. Click "Create API Key"
+4. Copy the generated key
 
 ### API Key Configuration
 
-To keep your Groq API key secure and prevent it from being committed to the repository:
+To configure your API key in the app:
 
-1. **Edit the Settings in the app:**
+1. **Launch the app** on your iOS device or simulator
+2. **Tap the Settings icon** (⚙️) in the navigation bar
+3. **Paste your API Key** in the Google AI section
+4. **Select your preferred model**
+5. **The key will be saved** securely in your device's UserDefaults
 
-   - Launch the app
-   - Tap the Settings icon (⚙️) in the navigation bar
-   - Paste your Groq API key in the "API Key" field
-   - The key will be saved securely in your device's UserDefaults
-
-**Note:** Your API key is stored locally on your device and never uploaded to any server except Groq's API servers.
+**Note:** Your API key is stored locally on your device and never uploaded to any server except Google's API servers.
 
 ### Configuring the App
 
 1. Launch the app on your iOS device or simulator
 2. Tap the Settings icon (⚙️) in the navigation bar
 3. Configure your preferences:
-   - **API Key**: Enter your Groq API key
-   - **Default Model**: Choose your preferred model
+   - **API Key**: Paste your Google AI API key
+   - **Default Model**: Choose your preferred Gemini model
    - **Temperature**: Adjust response creativity (0.0 - 2.0, default: 0.7)
    - **Max Tokens**: Set maximum response length (default: 1024)
-4. Select your preferred model from the model picker when creating a new chat
+4. Create a new chat and start messaging
 
 ### Available Models
 
-The app supports various Groq models:
+- **gemini-2.5-flash** - Fast and efficient (recommended for most tasks)
+- **gemini-2.5-pro** - Advanced reasoning and analysis
+- **gemini-3-flash** - Frontier-class performance
+- **gemini-3-pro** - Most intelligent with advanced reasoning
 
-- **Mixtral-8x7b-32768** - Fast, general-purpose model (default)
-- **Llama-3.1-70b** - Powerful reasoning and analysis
-- **Gemma-7b** - Lightweight and efficient
-- **Meta-Llama-Scout-17b** - Vision capabilities for image analysis
-- **Qwen/Qwen3-32B** - Advanced reasoning and multilingual support
-- **Mistral-8x7b** - Efficient and fast
-- **GPT-OSS models** - Advanced reasoning capabilities
+See [Google AI Integration Guide](GOOGLE_AI_INTEGRATION.md) for more details on using Google AI.
 
 ## Usage
 

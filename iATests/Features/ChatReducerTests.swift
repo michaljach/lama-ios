@@ -62,12 +62,11 @@ final class ChatReducerTests: XCTestCase {
       reducer: { Chat() },
       withDependencies: { deps in
         deps.userDefaultsService = .testValue
-        deps.groqService = .testValue
       }
     )
     
-    await store.send(.modelSelected("mixtral-8x7b-32768")) { state in
-      state.model = "mixtral-8x7b-32768"
+    await store.send(.modelSelected("openai/gpt-oss:120b")) { state in
+      state.model = "openai/gpt-oss:120b"
     }
   }
   
@@ -77,7 +76,6 @@ final class ChatReducerTests: XCTestCase {
       reducer: { Chat() },
       withDependencies: { deps in
         deps.userDefaultsService = .testValue
-        deps.groqService = .testValue
       }
     )
     
@@ -123,7 +121,6 @@ final class ChatListReducerTests: XCTestCase {
       initialState: ChatList.State(),
       reducer: { ChatList() },
       withDependencies: { deps in
-        deps.groqService = .testValue
       }
     )
     
@@ -142,7 +139,6 @@ final class ChatListReducerTests: XCTestCase {
       initialState: initialState,
       reducer: { ChatList() },
       withDependencies: { deps in
-        deps.groqService = .testValue
       }
     )
     
@@ -156,13 +152,12 @@ final class ChatListReducerTests: XCTestCase {
     let chatId = UUID()
     initialState.chats.insert(Chat.State(id: chatId), at: 0)
     
-    let models = ["mixtral-8x7b-32768", "llama-2-70b"]
+    let models = ["openai/gpt-oss:120b", "llama-2-70b"]
     
     let store = TestStore(
       initialState: initialState,
       reducer: { ChatList() },
       withDependencies: { deps in
-        deps.groqService = .testValue
       }
     )
     
@@ -178,7 +173,6 @@ final class ChatListReducerTests: XCTestCase {
       initialState: ChatList.State(),
       reducer: { ChatList() },
       withDependencies: { deps in
-        deps.groqService = .testValue
       }
     )
     
@@ -198,7 +192,6 @@ final class ChatListReducerTests: XCTestCase {
       initialState: initialState,
       reducer: { ChatList() },
       withDependencies: { deps in
-        deps.groqService = .testValue
       }
     )
     

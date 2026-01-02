@@ -13,7 +13,7 @@ final class UserDefaultsServiceTests: XCTestCase {
   func test_getDefaultModel_returnsDefaultValue() {
     let service = UserDefaultsService.testValue
     let model = service.getDefaultModel()
-    XCTAssertEqual(model, "groq/compound")
+    XCTAssertEqual(model, "openai/gpt-oss:120b")
   }
   
   func test_getTemperature_returnsDefaultValue() {
@@ -34,50 +34,12 @@ final class UserDefaultsServiceTests: XCTestCase {
     XCTAssertTrue(enabled)
   }
   
-  func test_getGroqAPIKey_returnsNilByDefault() {
-    let service = UserDefaultsService.testValue
-    let apiKey = service.getGroqAPIKey()
-    XCTAssertNil(apiKey)
-  }
-  
-  func test_setAndGetGroqAPIKey() {
-    var userDefaults: [String: Any] = [:]
-    
-    let service = UserDefaultsService(
-      getGroqAPIKey: {
-        userDefaults["groqAPIKey"] as? String
-      },
-      setGroqAPIKey: { value in
-        userDefaults["groqAPIKey"] = value
-      },
-      getDefaultModel: { "groq/compound" },
-      setDefaultModel: { _ in },
-      getTemperature: { 0.7 },
-      setTemperature: { _ in },
-      getMaxTokens: { 640 },
-      setMaxTokens: { _ in },
-      isWebSearchEnabled: { true },
-      setWebSearchEnabled: { _ in },
-      resetToDefaults: { }
-    )
-    
-    // Initially nil
-    XCTAssertNil(service.getGroqAPIKey())
-    
-    // Set and retrieve
-    let testKey = "test-api-key-123"
-    service.setGroqAPIKey(testKey)
-    XCTAssertEqual(service.getGroqAPIKey(), testKey)
-  }
-  
   func test_setAndGetDefaultModel() {
     var userDefaults: [String: Any] = [:]
     
     let service = UserDefaultsService(
-      getGroqAPIKey: { nil },
-      setGroqAPIKey: { _ in },
       getDefaultModel: {
-        userDefaults["defaultModel"] as? String ?? "groq/compound"
+        userDefaults["defaultModel"] as? String ?? "openai/gpt-oss:120b"
       },
       setDefaultModel: { value in
         userDefaults["defaultModel"] = value
@@ -100,9 +62,7 @@ final class UserDefaultsServiceTests: XCTestCase {
     var userDefaults: [String: Any] = [:]
     
     let service = UserDefaultsService(
-      getGroqAPIKey: { nil },
-      setGroqAPIKey: { _ in },
-      getDefaultModel: { "groq/compound" },
+      getDefaultModel: { "openai/gpt-oss:120b" },
       setDefaultModel: { _ in },
       getTemperature: {
         userDefaults["temperature"] as? Double ?? 0.7
@@ -126,9 +86,7 @@ final class UserDefaultsServiceTests: XCTestCase {
     var userDefaults: [String: Any] = [:]
     
     let service = UserDefaultsService(
-      getGroqAPIKey: { nil },
-      setGroqAPIKey: { _ in },
-      getDefaultModel: { "groq/compound" },
+      getDefaultModel: { "openai/gpt-oss:120b" },
       setDefaultModel: { _ in },
       getTemperature: { 0.7 },
       setTemperature: { _ in },
@@ -152,9 +110,7 @@ final class UserDefaultsServiceTests: XCTestCase {
     var userDefaults: [String: Any] = [:]
     
     let service = UserDefaultsService(
-      getGroqAPIKey: { nil },
-      setGroqAPIKey: { _ in },
-      getDefaultModel: { "groq/compound" },
+      getDefaultModel: { "openai/gpt-oss:120b" },
       setDefaultModel: { _ in },
       getTemperature: { 0.7 },
       setTemperature: { _ in },

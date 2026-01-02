@@ -14,13 +14,20 @@ struct SettingsView: View {
   var body: some View {
     Form {
       Section {
-        SecureField("Groq API Key", text: Binding(
-          get: { store.groqAPIKey },
-          set: { store.send(.groqAPIKeyChanged($0)) }
+        SecureField("API Key", text: Binding(
+          get: { store.googleAIAPIKey },
+          set: { store.send(.googleAIAPIKeyChanged($0)) }
         ))
-          .textInputAutocapitalization(.never)
-          .autocorrectionDisabled()
-
+        Text("Get your API key at aistudio.google.com")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      } header: {
+        Text("Google AI")
+      } footer: {
+        Text("Your API key is stored securely on your device and never shared.")
+      }
+      
+      Section {
         if store.isLoadingModels {
           HStack {
             Text("Default Model")
@@ -47,9 +54,7 @@ struct SettingsView: View {
           }
         }
       } header: {
-        Text("Groq API")
-      } footer: {
-        Text("Get your API key from https://console.groq.com/keys")
+        Text("Model")
       }
 
       Section {
@@ -79,17 +84,6 @@ struct SettingsView: View {
         Text("Generation Parameters")
       } footer: {
         Text("Temperature controls randomness (0 = deterministic, 2 = very creative). Max tokens limits response length.")
-      }
-      
-      Section {
-        Toggle("Enable Web Search", isOn: Binding(
-          get: { store.webSearchEnabled },
-          set: { store.send(.webSearchEnabledChanged($0)) }
-        ))
-      } header: {
-        Text("Web Search")
-      } footer: {
-        Text("Allow the AI to search the web for current information when answering questions.")
       }
 
       Section {

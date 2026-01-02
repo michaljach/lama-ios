@@ -13,33 +13,11 @@ struct ChatListView: View {
   
   var body: some View {
     NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
-      Group {
+      ZStack {
         if store.chats.isEmpty {
           NoChatsMessage()
         } else {
-          List {
-            ForEach(store.chats, id: \.id) { chat in
-              NavigationLink(state: ChatList.Path.State.chat(chat)) {
-                VStack(alignment: .leading, spacing: 4) {
-                  Text(chat.title)
-                    .font(.headline)
-                  let visibleMessageCount = chat.messages.count
-                  if visibleMessageCount > 0 {
-                    Text("\(visibleMessageCount) message\(visibleMessageCount == 1 ? "" : "s")")
-                      .font(.caption)
-                      .foregroundStyle(.secondary)
-                  }
-                }
-                .padding(.vertical, 4)
-              }
-            }
-            .onDelete { indexSet in
-              for index in indexSet {
-                let chat = store.chats[store.chats.index(store.chats.startIndex, offsetBy: index)]
-                store.send(.deleteChat(chat.id))
-              }
-            }
-          }
+          chatListContent
         }
       }
       .navigationTitle("Chats")
@@ -66,6 +44,20 @@ struct ChatListView: View {
     }
     .onAppear {
       store.send(.initialize)
+    }
+  }
+  
+  var chatListContent: some View {
+    List {
+      ForEach(Array(store.chats.enumerated()), id: \.element.id) { _, chat in
+        NavigationLink(state: ChatList.Path.State.chat(chat)) {
+          VStack(alignment: .leading, spacing: 4) {
+            Text("Chat")
+              .font(.headline)
+          }
+          .padding(.vertical, 4)
+        }
+      }
     }
   }
 }
