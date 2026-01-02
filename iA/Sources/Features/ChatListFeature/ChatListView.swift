@@ -13,27 +13,7 @@ struct ChatListView: View {
   
   var body: some View {
     NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
-      ZStack {
-        if store.chats.isEmpty {
-          NoChatsMessage()
-        } else {
-          chatListContent
-        }
-      }
-      .navigationTitle("Chats")
-      .toolbar {
-        ToolbarItem(placement: .navigationBarLeading) {
-          Button(action: { store.send(.settingsButtonTapped) }) {
-            Image(systemName: "gear")
-          }
-        }
-
-        ToolbarItem(placement: .primaryAction) {
-          Button(action: { store.send(.newChatButtonTapped) }) {
-            Image(systemName: "plus")
-          }
-        }
-      }
+      chatListContent
     } destination: { store in
       switch store.case {
       case let .chat(store):
@@ -48,14 +28,58 @@ struct ChatListView: View {
   }
   
   var chatListContent: some View {
+    VStack(spacing: 0) {
+      if store.chats.isEmpty {
+        Text("No chats yet")
+          .foregroundColor(.gray)
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+      } else {
+        chatList
+      }
+    }
+    .navigationTitle("Chats")
+    .toolbar {
+      ToolbarItem(placement: .navigationBarLeading) {
+        Button(action: { store.send(.settingsButtonTapped) }) {
+          Label("Settings", systemImage: "gear")
+        }
+      }
+
+      ToolbarItem(placement: .primaryAction) {
+        Button(action: { store.send(.newChatButtonTapped) }) {
+          Label("New Chat", systemImage: "plus")
+        }
+      }
+    }
+  }
+  
+  var chatList: some View {
     List {
-      ForEach(Array(store.chats.enumerated()), id: \.element.id) { _, chat in
-        NavigationLink(state: ChatList.Path.State.chat(chat)) {
+      ForEach(store.chats) { chat in
+        Button {
+          store.send(.selectChat(chat.id))
+        } label: {
           VStack(alignment: .leading, spacing: 4) {
-            Text("Chat")
+            Text(chat.title)
               .font(.headline)
+              .foregroundStyle(.colorForeground)
+              .lineLimit(1)
+            
+            if let lastMessage = chat.messages.last {
+              Text(lastMessage.content)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+            }
           }
           .padding(.vertical, 4)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+          Button(role: .destructive) {
+            store.send(.deleteChat(chat.id))
+          } label: {
+            Label("Delete", systemImage: "trash")
+          }
         }
       }
     }
@@ -69,4 +93,3 @@ struct ChatListView: View {
     }
   )
 }
-

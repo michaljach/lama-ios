@@ -19,7 +19,7 @@ struct UserDefaultsService {
 
   // Default values
   private enum Defaults {
-    nonisolated static let defaultModel = "gemini-2.5-flash"
+    nonisolated static let defaultModel = "models/gemini-3-flash-preview"
     nonisolated static let temperature = 0.7
     nonisolated static let maxTokens = 1024
   }

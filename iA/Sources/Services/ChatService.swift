@@ -17,41 +17,91 @@ enum ChatError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .noAPIKey:
-      return "No API key configured"
+      return "API key not configured. Please add your Google AI API key in Settings."
     case .networkError(let message):
       return "Network error: \(message)"
     case .invalidResponse:
-      return "Invalid response from API"
+      return "Invalid response from API. Please try again."
     case .apiError(let message):
-      return "API error: \(message)"
+      return message
+    }
+  }
+  
+  var recoverySuggestion: String? {
+    switch self {
+    case .noAPIKey:
+      return "Go to Settings and enter your Google AI API key. Get one at https://aistudio.google.com/apikey"
+    case .networkError:
+      return "Check your internet connection and try again."
+    case .invalidResponse:
+      return "The API returned an unexpected response. Please try again or check your model selection."
+    case .apiError(let message):
+      if message.contains("API_KEY_INVALID") || message.contains("invalid") {
+        return "Your API key appears to be invalid. Please check it in Settings."
+      } else if message.contains("quota") || message.contains("limit") {
+        return "You've reached your API quota limit. Check your Google AI Console."
+      } else if message.contains("404") || message.contains("not found") {
+        return "The model '\(message)' may not be available. Try selecting a different model."
+      }
+      return "Please try again or contact support if the problem persists."
     }
   }
 }
 
+struct WebSource: Equatable, Codable, Identifiable {
+  let id: UUID
+  let title: String
+  let url: String
+  
+  init(id: UUID = UUID(), title: String, url: String) {
+    self.id = id
+    self.title = title
+    self.url = url
+  }
+}
+
+struct ChatResponse: Equatable {
+  let text: String
+  let sources: [WebSource]
+}
+
+enum ChatStreamEvent: Equatable {
+  case token(String)
+  case complete(sources: [WebSource])
+  case error(String)
+}
+
 struct ChatService {
-  var sendMessage: @Sendable (
+  var streamMessage: @Sendable (
     _ messages: [ChatMessage],
     _ model: String,
     _ temperature: Double,
-    _ maxTokens: Int
-  ) async throws -> String
+    _ maxTokens: Int,
+    _ webSearchEnabled: Bool
+  ) -> AsyncThrowingStream<ChatStreamEvent, Error>
 }
 
 extension ChatService: DependencyKey {
   static let liveValue = Self(
-    sendMessage: { messages, model, temperature, maxTokens in
-      return try await sendGoogleAIMessage(
+    streamMessage: { messages, model, temperature, maxTokens, webSearchEnabled in
+      return streamGoogleAIMessage(
         messages: messages,
         model: model,
         temperature: temperature,
-        maxTokens: maxTokens
+        maxTokens: maxTokens,
+        webSearchEnabled: webSearchEnabled
       )
     }
   )
   
   static let testValue = Self(
-    sendMessage: { _, _, _, _ in
-      "Test response"
+    streamMessage: { _, _, _, _, _ in
+      AsyncThrowingStream { continuation in
+        continuation.yield(.token("Test "))
+        continuation.yield(.token("response"))
+        continuation.yield(.complete(sources: []))
+        continuation.finish()
+      }
     }
   )
 }
@@ -63,149 +113,244 @@ extension DependencyValues {
   }
 }
 
-// MARK: - Google AI Implementation
-private func sendGoogleAIMessage(
+// MARK: - Google AI Streaming Implementation
+private func streamGoogleAIMessage(
   messages: [ChatMessage],
   model: String,
   temperature: Double,
-  maxTokens: Int
-) async throws -> String {
-  let apiKey = UserDefaults.standard.string(forKey: "googleAIAPIKey") ?? ""
-  guard !apiKey.isEmpty else {
-    throw ChatError.noAPIKey
-  }
-  
-  // Model name should NOT have "models/" prefix for the URL
-  let apiModel = model.replacingOccurrences(of: "models/", with: "")
-  
-  let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(apiModel):generateContent?key=\(apiKey)")!
-  var request = URLRequest(url: url)
-  request.httpMethod = "POST"
-  request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-  
-  struct GoogleAIMessage: Codable {
-    let role: String
-    let parts: [Part]
-    
-    struct Part: Codable {
-      let text: String
-    }
-  }
-  
-  struct GoogleAIRequest: Codable {
-    let contents: [GoogleAIMessage]
-    let generationConfig: GenerationConfig
-    
-    struct GenerationConfig: Codable {
-      let temperature: Double
-      let maxOutputTokens: Int
-      
-      enum CodingKeys: String, CodingKey {
-        case temperature
-        case maxOutputTokens = "max_output_tokens"
-      }
-    }
-  }
-  
-  // Convert chat messages to Google AI format
-  var googleMessages: [GoogleAIMessage] = []
-  for message in messages {
-    let googleRole = message.role == "user" ? "user" : "model"
-    googleMessages.append(
-      GoogleAIMessage(
-        role: googleRole,
-        parts: [GoogleAIMessage.Part(text: message.content)]
-      )
-    )
-  }
-  
-  let googleRequest = GoogleAIRequest(
-    contents: googleMessages,
-    generationConfig: GoogleAIRequest.GenerationConfig(
-      temperature: temperature,
-      maxOutputTokens: maxTokens
-    )
-  )
-  
-  request.httpBody = try JSONEncoder().encode(googleRequest)
-  
-  // Print debug info
-  print("📤 Sending request to: \(url.absoluteString.prefix(80))...")
-  print("📝 Request body: \(String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "N/A")")
-  
-  let (data, response) = try await URLSession.shared.data(for: request)
-  
-  guard let httpResponse = response as? HTTPURLResponse else {
-    throw ChatError.invalidResponse
-  }
-  
-  print("📥 Response status: \(httpResponse.statusCode)")
-  
-  if httpResponse.statusCode != 200 {
-    let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
-    print("❌ API Error: \(errorMessage)")
-    throw ChatError.apiError("Status \(httpResponse.statusCode): \(errorMessage)")
-  }
-  
-  // Print raw response for debugging
-  let rawResponse = String(data: data, encoding: .utf8) ?? "N/A"
-  print("✅ Raw response: \(rawResponse.prefix(200))...")
-  
-  struct GoogleAIResponse: Codable {
-    let candidates: [Candidate]?
-    let error: ErrorInfo?
-    
-    struct ErrorInfo: Codable {
-      let code: Int?
-      let message: String?
-      let status: String?
-    }
-    
-    struct Candidate: Codable {
-      let content: Content
-      let finishReason: String?
-      
-      struct Content: Codable {
-        let parts: [Part]
-        
-        struct Part: Codable {
-          let text: String?
+  maxTokens: Int,
+  webSearchEnabled: Bool
+) -> AsyncThrowingStream<ChatStreamEvent, Error> {
+  return AsyncThrowingStream { continuation in
+    Task {
+      do {
+        let apiKey = UserDefaults.standard.string(forKey: "googleAIAPIKey") ?? ""
+        guard !apiKey.isEmpty else {
+          throw ChatError.noAPIKey
         }
+        
+        // Model name should NOT have "models/" prefix for the URL
+        let apiModel = model.replacingOccurrences(of: "models/", with: "")
+        
+        // Use streamGenerateContent endpoint for streaming
+        let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(apiModel):streamGenerateContent?key=\(apiKey)&alt=sse")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        struct GoogleAIMessage: Codable {
+          let role: String
+          let parts: [Part]
+          
+          struct Part: Codable {
+            let text: String
+          }
+        }
+        
+        struct GoogleAIRequest: Codable {
+          let contents: [GoogleAIMessage]
+          let generationConfig: GenerationConfig
+          let tools: [Tool]?
+          
+          struct GenerationConfig: Codable {
+            let temperature: Double
+            let maxOutputTokens: Int
+            
+            enum CodingKeys: String, CodingKey {
+              case temperature
+              case maxOutputTokens = "max_output_tokens"
+            }
+          }
+          
+          struct Tool: Codable {
+            let googleSearch: GoogleSearch
+            
+            struct GoogleSearch: Codable {
+              // Empty object to enable Google Search
+            }
+            
+            enum CodingKeys: String, CodingKey {
+              case googleSearch = "google_search"
+            }
+          }
+        }
+        
+        // Convert chat messages to Google AI format with system prompt
+        var googleMessages: [GoogleAIMessage] = []
+        
+        // Add system prompt as first user message if this is the first message
+        if messages.count == 1 && messages.first?.role == "user" {
+          let systemPrompt = """
+          You are a helpful AI assistant. When responding:
+          
+          • Use bullet points to organize information clearly
+          • Format lists with proper markdown bullets (•, -, or *)
+          • Use tables when comparing multiple items or showing structured data
+          • Use **bold** for emphasis on key terms
+          • Use `code blocks` for technical terms, commands, or code
+          • Break down complex explanations into digestible sections
+          • Use numbered lists (1., 2., 3.) for sequential steps
+          
+          Keep your responses well-structured, scannable, and visually appealing using markdown formatting.
+          """
+          
+          googleMessages.append(
+            GoogleAIMessage(
+              role: "user",
+              parts: [GoogleAIMessage.Part(text: systemPrompt)]
+            )
+          )
+          
+          googleMessages.append(
+            GoogleAIMessage(
+              role: "model",
+              parts: [GoogleAIMessage.Part(text: "Understood. I'll format my responses with clear structure using bullet points, tables, bold text, and code blocks to make information easy to scan and understand.")]
+            )
+          )
+        }
+        
+        for message in messages {
+          let googleRole = message.role == "user" ? "user" : "model"
+          googleMessages.append(
+            GoogleAIMessage(
+              role: googleRole,
+              parts: [GoogleAIMessage.Part(text: message.content)]
+            )
+          )
+        }
+        
+        let googleRequest = GoogleAIRequest(
+          contents: googleMessages,
+          generationConfig: GoogleAIRequest.GenerationConfig(
+            temperature: temperature,
+            maxOutputTokens: maxTokens
+          ),
+          tools: webSearchEnabled ? [
+            GoogleAIRequest.Tool(
+              googleSearch: GoogleAIRequest.Tool.GoogleSearch()
+            )
+          ] : nil
+        )
+        
+        request.httpBody = try JSONEncoder().encode(googleRequest)
+        
+        print("📤 Streaming request to: \(url.absoluteString.prefix(80))...")
+        
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+          throw ChatError.invalidResponse
+        }
+        
+        print("📥 Streaming response status: \(httpResponse.statusCode)")
+        
+        if httpResponse.statusCode != 200 {
+          throw ChatError.apiError("HTTP \(httpResponse.statusCode)")
+        }
+        
+        struct StreamResponse: Codable {
+          let candidates: [Candidate]?
+          let error: ErrorInfo?
+          
+          struct ErrorInfo: Codable {
+            let code: Int?
+            let message: String?
+            let status: String?
+          }
+          
+          struct Candidate: Codable {
+            let content: Content
+            let finishReason: String?
+            let groundingMetadata: GroundingMetadata?
+            
+            struct Content: Codable {
+              let parts: [Part]
+              
+              struct Part: Codable {
+                let text: String?
+              }
+            }
+            
+            struct GroundingMetadata: Codable {
+              let groundingChunks: [GroundingChunk]?
+              let webSearchQueries: [String]?
+              
+              enum CodingKeys: String, CodingKey {
+                case groundingChunks = "groundingChunks"
+                case webSearchQueries = "webSearchQueries"
+              }
+              
+              struct GroundingChunk: Codable {
+                let web: WebChunk?
+                
+                struct WebChunk: Codable {
+                  let uri: String?
+                  let title: String?
+                }
+              }
+            }
+          }
+        }
+        
+        var allSources: [WebSource] = []
+        
+        // Parse SSE stream
+        for try await line in bytes.lines {
+          // SSE format: "data: {json}"
+          if line.hasPrefix("data: ") {
+            let jsonString = String(line.dropFirst(6)) // Remove "data: "
+            
+            guard let jsonData = jsonString.data(using: .utf8) else { continue }
+            
+            do {
+              let streamResponse = try JSONDecoder().decode(StreamResponse.self, from: jsonData)
+              
+              // Check for error
+              if let error = streamResponse.error {
+                let errorMsg = error.message ?? "Unknown error"
+                continuation.yield(.error(errorMsg))
+                throw ChatError.apiError(errorMsg)
+              }
+              
+              // Extract text chunk
+              if let candidates = streamResponse.candidates,
+                 let candidate = candidates.first,
+                 let text = candidate.content.parts.first?.text {
+                continuation.yield(.token(text))
+              }
+              
+              // Extract sources from grounding metadata
+              if let candidates = streamResponse.candidates,
+                 let candidate = candidates.first,
+                 let groundingMetadata = candidate.groundingMetadata,
+                 let chunks = groundingMetadata.groundingChunks {
+                for chunk in chunks {
+                  if let web = chunk.web,
+                     let uri = web.uri,
+                     let title = web.title {
+                    let source = WebSource(title: title, url: uri)
+                    if !allSources.contains(where: { $0.url == uri }) {
+                      allSources.append(source)
+                    }
+                  }
+                }
+              }
+            } catch {
+              print("⚠️ Failed to decode chunk: \(error)")
+            }
+          }
+        }
+        
+        // Send completion with sources
+        continuation.yield(.complete(sources: allSources))
+        continuation.finish()
+        
+        print("✅ Stream completed with \(allSources.count) sources")
+        
+      } catch {
+        print("❌ Stream error: \(error)")
+        continuation.finish(throwing: error)
       }
     }
-  }
-  
-  do {
-    let googleResponse = try JSONDecoder().decode(GoogleAIResponse.self, from: data)
-    
-    // Check for API error in response
-    if let error = googleResponse.error {
-      let errorMsg = error.message ?? "Unknown error"
-      print("🚫 API returned error: \(errorMsg)")
-      throw ChatError.apiError(errorMsg)
-    }
-    
-    // Check if we have candidates
-    guard let candidates = googleResponse.candidates, !candidates.isEmpty else {
-      print("⚠️ No candidates in response")
-      throw ChatError.invalidResponse
-    }
-    
-    guard let text = candidates.first?.content.parts.first?.text, !text.isEmpty else {
-      print("⚠️ No text content in candidate")
-      throw ChatError.invalidResponse
-    }
-    
-    print("✨ Got response: \(text.prefix(100))...")
-    return text
-  } catch let DecodingError.dataCorrupted(context) {
-    print("🔴 Decoding error: \(context.debugDescription)")
-    throw ChatError.apiError("Failed to decode response: \(context.debugDescription)")
-  } catch let DecodingError.keyNotFound(key, context) {
-    print("🔴 Key not found: \(key) - \(context.debugDescription)")
-    throw ChatError.apiError("Response missing key: \(key)")
-  } catch {
-    print("🔴 General decoding error: \(error)")
-    throw ChatError.apiError("Decode error: \(error.localizedDescription)")
   }
 }

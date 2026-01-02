@@ -15,12 +15,13 @@ struct Settings {
   
   @ObservableState
   struct State: Equatable {
-    var defaultModel: String = "gemini-2.5-flash"
+    var defaultModel: String = "models/gemini-3-flash-preview"
     var temperature: Double = 0.7
     var maxTokens: Int = 1024
-    var availableModels: [String] = []
+    var availableModels: [AIModel] = []
     var isLoadingModels: Bool = false
     var googleAIAPIKey: String = ""
+    var webSearchEnabled: Bool = false
 
     init(userDefaultsService: UserDefaultsService = .liveValue) {
       // Load from UserDefaults service
@@ -28,6 +29,7 @@ struct Settings {
       self.temperature = userDefaultsService.getTemperature()
       self.maxTokens = userDefaultsService.getMaxTokens()
       self.googleAIAPIKey = UserDefaults.standard.string(forKey: "googleAIAPIKey") ?? ""
+      self.webSearchEnabled = UserDefaults.standard.bool(forKey: "webSearchEnabled")
     }
   }
 
@@ -37,9 +39,10 @@ struct Settings {
     case maxTokensChanged(Int)
     case resetToDefaults
     case loadModels
-    case modelsLoaded([String])
+    case modelsLoaded([AIModel])
     case modelsLoadFailed
     case googleAIAPIKeyChanged(String)
+    case webSearchToggled(Bool)
   }
 
   var body: some Reducer<State, Action> {
@@ -69,11 +72,22 @@ struct Settings {
       
       case .loadModels:
         state.isLoadingModels = true
-        return .none
+        return .run { send in
+          do {
+            let models = try await googleAIService.listModels()
+            await send(.modelsLoaded(models))
+          } catch {
+            await send(.modelsLoadFailed)
+          }
+        }
       
       case .modelsLoaded(let models):
         state.isLoadingModels = false
         state.availableModels = models
+        // If current model is not in the list, use the first one
+        if !models.contains(where: { $0.name == state.defaultModel }), let firstModel = models.first {
+          state.defaultModel = firstModel.name
+        }
         return .none
       
       case .modelsLoadFailed:
@@ -83,6 +97,11 @@ struct Settings {
       case .googleAIAPIKeyChanged(let key):
         state.googleAIAPIKey = key
         UserDefaults.standard.set(key, forKey: "googleAIAPIKey")
+        return .none
+      
+      case .webSearchToggled(let enabled):
+        state.webSearchEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: "webSearchEnabled")
         return .none
       }
     }

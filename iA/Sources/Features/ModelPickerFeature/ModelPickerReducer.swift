@@ -13,8 +13,8 @@ struct ModelPicker {
   
   @ObservableState
   struct State: Equatable {
-    var selectedModel: String = "gemini-2.5-flash"
-    var availableModels: [String] = []
+    var selectedModel: String = "models/gemini-3-flash-preview"
+    var availableModels: [AIModel] = []
     var isDisabled: Bool = false
   }
   

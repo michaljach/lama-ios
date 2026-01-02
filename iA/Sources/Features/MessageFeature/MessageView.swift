@@ -10,58 +10,53 @@ import SwiftUI
 import MarkdownUI
 
 struct MessageView: View {
-  var store: StoreOf<Message>
+  @Bindable var store: StoreOf<Message>
   
   var body: some View {
-    HStack(alignment: .top, spacing: 12) {
-      if store.role == .assistant {
-        Circle()
-          .fill(Color.colorBlue)
-          .frame(width: 32, height: 32)
-          .overlay(
-            Text("AI")
-              .font(.caption2)
-              .fontWeight(.bold)
-              .foregroundColor(.white)
-          )
-      }
-      
-      VStack(alignment: .leading, spacing: 8) {
-        // Resend button for failed messages
-        if store.canResend {
-          Button(action: {
-            store.send(.resend)
-          }) {
-            HStack {
-              Text("Resend")
-              Image(systemName: "arrow.clockwise")
-                .font(.system(size: 16))
-            }
+    VStack(alignment: .leading, spacing: 8) {
+      if store.role == .user {
+        HStack {
+          Spacer()
+          Text(store.content)
+            .textSelection(.enabled)
             .foregroundColor(.colorForeground)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .background(Color.colorGray)
+            .clipShape(Capsule())
+        }
+      } else {
+        VStack(alignment: .leading, spacing: 12) {
+          Markdown(store.content)
+            .textSelection(.enabled)
+            .markdownTextStyle(\.text) {
+              ForegroundColor(.colorForeground)
+            }
+            .markdownTextStyle(\.code) {
+              FontFamilyVariant(.monospaced)
+              BackgroundColor(Color.colorForeground.opacity(0.08))
+            }
+            .markdownBlockStyle(\.codeBlock) { configuration in
+              configuration.label
+                .padding()
+                .background(Color.colorForeground.opacity(0.08))
+                .cornerRadius(8)
+            }
+          
+          // Compact sources bar
+          if !store.sources.isEmpty {
+            SourcesBarView(sources: store.sources) {
+              store.send(.showSources)
+            }
           }
         }
-        
-        // Message content
-        Text(store.content)
-          .textSelection(.enabled)
-          .foregroundColor(store.role == .user ? .white : .colorForeground)
-          .lineLimit(nil)
-      }
-      
-      if store.role == .user {
-        Spacer()
+        .padding(.vertical, 8)
       }
     }
-    .padding(.vertical, 12)
     .padding(.horizontal, 16)
-    .background(
-      store.role == .user
-        ? Color.colorBlue
-        : Color.colorForeground.opacity(0.08)
-    )
-    .cornerRadius(12)
-    .padding(.horizontal, 16)
-    .padding(.vertical, 4)
+    .sheet(item: $store.scope(state: \.sourcesState, action: \.sources)) { sourcesStore in
+      SourcesDetailSheet(store: sourcesStore)
+    }
   }
 }
 
@@ -81,7 +76,12 @@ struct MessageView: View {
       store: Store(initialState: Message.State(
         id: UUID(),
         role: .assistant,
-        content: "I'm doing well, thank you for asking! How can I help you today?"
+        content: "I'm doing well, thank you for asking! How can I help you today?",
+        sources: [
+          WebSource(title: "Example Source", url: "https://example.com"),
+          WebSource(title: "Another Source", url: "https://apple.com"),
+          WebSource(title: "Third Source", url: "https://google.com")
+        ]
       )) {
         Message()
       }

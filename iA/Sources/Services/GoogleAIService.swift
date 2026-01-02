@@ -8,6 +8,19 @@
 import ComposableArchitecture
 import Foundation
 
+// Model information from Google AI API
+struct AIModel: Codable, Equatable, Identifiable, Hashable {
+  let name: String           // API identifier (e.g., "models/gemini-3-flash-preview")
+  let displayName: String?   // User-friendly name from API
+  
+  var id: String { name }
+  
+  // Use displayName if available, otherwise fallback to name
+  var friendlyName: String {
+    displayName ?? name
+  }
+}
+
 struct GoogleAIMessage: Codable {
   let role: String
   let content: String
@@ -94,7 +107,7 @@ struct GoogleAIService {
     _ maxTokens: Int
   ) async throws -> String
   
-  var listModels: @Sendable () async throws -> [String]
+  var listModels: @Sendable () async throws -> [AIModel]
 }
 
 extension GoogleAIService: DependencyKey {
@@ -159,15 +172,11 @@ extension GoogleAIService: DependencyKey {
       }
       
       struct ModelsResponse: Codable {
-        let models: [ModelInfo]
-      }
-      
-      struct ModelInfo: Codable {
-        let name: String
+        let models: [AIModel]
       }
       
       let modelsResponse = try JSONDecoder().decode(ModelsResponse.self, from: data)
-      return modelsResponse.models.map { $0.name }
+      return modelsResponse.models
     }
   )
   
@@ -177,7 +186,11 @@ extension GoogleAIService: DependencyKey {
       "Test response from Google AI"
     },
     listModels: {
-      ["gemini-2.5-flash", "gemini-2.5-pro"]
+      [
+        AIModel(name: "models/gemini-3-flash-preview", displayName: "Gemini 3 Flash Preview"),
+        AIModel(name: "models/gemini-2.0-flash-exp", displayName: "Gemini 2.0 Flash (Experimental)"),
+        AIModel(name: "models/gemini-exp-1206", displayName: "Gemini Experimental 1206")
+      ]
     }
   )
 }

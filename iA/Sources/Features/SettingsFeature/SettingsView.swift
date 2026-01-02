@@ -18,13 +18,13 @@ struct SettingsView: View {
           get: { store.googleAIAPIKey },
           set: { store.send(.googleAIAPIKeyChanged($0)) }
         ))
-        Text("Get your API key at aistudio.google.com")
-          .font(.caption)
-          .foregroundStyle(.secondary)
       } header: {
         Text("Google AI")
       } footer: {
-        Text("Your API key is stored securely on your device and never shared.")
+        VStack(alignment: .leading, spacing: 8) {
+          Text("Get your API key at aistudio.google.com")
+          Text("Your API key is stored securely on your device and never shared.")
+        }
       }
       
       Section {
@@ -48,8 +48,11 @@ struct SettingsView: View {
             get: { store.defaultModel },
             set: { store.send(.defaultModelChanged($0)) }
           )) {
-            ForEach(store.availableModels, id: \.self) { model in
-              Text(model).tag(model)
+            ForEach(store.availableModels, id: \.id) { model in
+              Text(model.friendlyName)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .tag(model.name)
             }
           }
         }
@@ -84,6 +87,17 @@ struct SettingsView: View {
         Text("Generation Parameters")
       } footer: {
         Text("Temperature controls randomness (0 = deterministic, 2 = very creative). Max tokens limits response length.")
+      }
+
+      Section {
+        Toggle("Enable Web Search", isOn: Binding(
+          get: { store.webSearchEnabled },
+          set: { store.send(.webSearchToggled($0)) }
+        ))
+      } header: {
+        Text("Features")
+      } footer: {
+        Text("When enabled, the AI can search the web for current information and real-time data.")
       }
 
       Section {

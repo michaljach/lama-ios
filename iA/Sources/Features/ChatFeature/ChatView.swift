@@ -7,65 +7,79 @@
 
 import ComposableArchitecture
 import SwiftUI
+import MarkdownUI
 
 struct ChatView: View {
   @Bindable var store: StoreOf<Chat>
   
   var body: some View {
     VStack(spacing: 0) {
+      // Error banner
+      if let errorMessage = store.errorMessage {
+        VStack(alignment: .leading, spacing: 8) {
+          HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+              .foregroundColor(.orange)
+              .font(.title3)
+            
+            VStack(alignment: .leading, spacing: 4) {
+              Text("Error")
+                .font(.headline)
+                .foregroundColor(.primary)
+              
+              Text(errorMessage)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer()
+            
+            Button(action: { store.send(.clearError) }) {
+              Image(systemName: "xmark.circle.fill")
+                .foregroundColor(.gray)
+                .font(.title3)
+            }
+          }
+          .padding(16)
+          .background(Color.orange.opacity(0.1))
+          .cornerRadius(12)
+          .padding(.horizontal, 16)
+          .padding(.top, 8)
+        }
+        .transition(.move(edge: .top).combined(with: .opacity))
+      }
+      
       ScrollViewReader { scrollProxy in
         ScrollView {
           LazyVStack(alignment: .leading, spacing: 12) {
-            if store.messages.isEmpty {
-              VStack {
-                Text("No messages yet")
-                  .foregroundColor(.gray)
-                Text("Start a conversation")
-                  .foregroundColor(.gray)
-                  .font(.caption)
-              }
-              .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-              .padding()
-             } else {
-              ForEach(store.messages) { message in
-                VStack {
-                  HStack(alignment: .top, spacing: 12) {
-                    if message.role == "assistant" {
-                      Circle()
-                        .fill(Color.colorBlue)
-                        .frame(width: 32, height: 32)
-                        .overlay(
-                          Text("AI")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                        )
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                      Text(message.content)
-                        .textSelection(.enabled)
-                        .foregroundColor(message.role == "user" ? .white : .colorForeground)
-                        .lineLimit(nil)
-                    }
-                    
-                    if message.role == "user" {
-                      Spacer()
-                    }
-                  }
-                  .padding(.vertical, 12)
-                  .padding(.horizontal, 16)
-                  .background(
-                    message.role == "user"
-                      ? Color.colorBlue
-                      : Color.colorForeground.opacity(0.08)
-                  )
-                  .cornerRadius(12)
-                  .padding(.horizontal, 16)
-                  .padding(.vertical, 4)
+            ForEachStore(
+              store.scope(state: \.messages, action: \.message)
+            ) { messageStore in
+              MessageView(store: messageStore)
+            }
+            
+            // Loading indicator
+            if store.isLoading {
+              HStack(spacing: 8) {
+                ProgressView()
+                  .progressViewStyle(CircularProgressViewStyle())
+                  .scaleEffect(0.8)
+                
+                if store.loadingState == .webSearching {
+                  Text("Searching the web...")
+                    .foregroundColor(.secondary)
+                    .font(.subheadline)
+                } else {
+                  Text("Thinking...")
+                    .foregroundColor(.secondary)
+                    .font(.subheadline)
                 }
-                .id(message.id)
               }
+              .padding(.horizontal, 16)
+              .padding(.vertical, 8)
+              .transition(.opacity)
+              .id("loading-indicator")
             }
           }
           .scrollTargetLayout()
@@ -73,6 +87,12 @@ struct ChatView: View {
             // Scroll to bottom when new message arrives
             if let lastMessage = store.messages.last {
               scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
+            }
+          }
+          .onChange(of: store.isLoading) { _, isLoading in
+            // Scroll to loading indicator when it appears
+            if isLoading {
+              scrollProxy.scrollTo("loading-indicator", anchor: .bottom)
             }
           }
         }
@@ -113,4 +133,3 @@ struct ChatView: View {
     }
   )
 }
-
