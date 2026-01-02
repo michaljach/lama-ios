@@ -17,13 +17,29 @@ struct MessageView: View {
       if store.role == .user {
         HStack {
           Spacer()
-          Text(store.content)
-            .textSelection(.enabled)
-            .foregroundColor(.colorForeground)
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .background(Color.colorGray)
-            .clipShape(Capsule())
+          VStack(alignment: .trailing, spacing: 8) {
+            // Display images if present
+            if !store.images.isEmpty {
+              ForEach(Array(store.images.enumerated()), id: \.offset) { _, image in
+                Image(uiImage: image)
+                  .resizable()
+                  .scaledToFit()
+                  .frame(maxWidth: 200)
+                  .cornerRadius(12)
+              }
+            }
+            
+            // Display text if present
+            if !store.content.isEmpty {
+              Text(store.content)
+                .textSelection(.enabled)
+                .foregroundColor(.colorForeground)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+                .background(Color.colorGray)
+                .clipShape(Capsule())
+            }
+          }
         }
       } else {
         VStack(alignment: .leading, spacing: 12) {

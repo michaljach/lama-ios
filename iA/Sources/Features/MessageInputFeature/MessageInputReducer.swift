@@ -77,7 +77,6 @@ struct MessageInput {
         guard !trimmed.isEmpty || !state.selectedImages.isEmpty else {
           return .none
         }
-        print("[MessageInput] sendButtonTapped -> delegate.sendMessage text='\(trimmed)' images=\(state.selectedImages.count)")
         return .send(.delegate(.sendMessage))
         
       case .submitButtonTapped:
@@ -85,11 +84,9 @@ struct MessageInput {
         guard !trimmed.isEmpty || !state.selectedImages.isEmpty else {
           return .none
         }
-        print("[MessageInput] submitButtonTapped -> delegate.sendMessage text='\(trimmed)' images=\(state.selectedImages.count)")
         return .send(.delegate(.sendMessage))
         
       case .stopButtonTapped:
-        print("[MessageInput] stopButtonTapped -> delegate.stopGeneration")
         return .send(.delegate(.stopGeneration))
         
       case .imagePickerTapped:

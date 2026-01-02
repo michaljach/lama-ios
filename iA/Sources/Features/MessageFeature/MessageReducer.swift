@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import Foundation
+import UIKit
 
 @Reducer
 struct Message {
@@ -15,6 +16,7 @@ struct Message {
     var id: UUID
     var role: MessageRole
     var content: String
+    var images: [UIImage] = []
     var sources: [WebSource] = []
     var canResend: Bool = false
     @Presents var sourcesState: Sources.State?
@@ -22,6 +24,16 @@ struct Message {
     enum MessageRole: Equatable {
       case user
       case assistant
+    }
+    
+    static func == (lhs: State, rhs: State) -> Bool {
+      return lhs.id == rhs.id &&
+             lhs.role == rhs.role &&
+             lhs.content == rhs.content &&
+             lhs.images.count == rhs.images.count &&
+             lhs.sources == rhs.sources &&
+             lhs.canResend == rhs.canResend &&
+             lhs.sourcesState == rhs.sourcesState
     }
   }
   

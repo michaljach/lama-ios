@@ -137,7 +137,6 @@ struct ChatList {
         return .none
 
       case .newChatButtonTapped:
-        print("DEBUG: newChatButtonTapped - path before: \(state.path.count)")
         
         // Clean up empty chats before creating new one
         state.chats.removeAll { $0.messages.isEmpty }
@@ -150,11 +149,9 @@ struct ChatList {
         // Only replace the path, don't append
         state.path.removeAll()
         state.path.append(.chat(newChatItem))
-        print("DEBUG: newChatButtonTapped - path after: \(state.path.count)")
         return .none
 
       case .settingsButtonTapped:
-        print("DEBUG: settingsButtonTapped - path before: \(state.path.count)")
         
         // Clean up empty chats before going to settings
         state.chats.removeAll { $0.messages.isEmpty }
@@ -162,11 +159,9 @@ struct ChatList {
         // Replace the path with settings
         state.path.removeAll()
         state.path.append(.settings(Settings.State()))
-        print("DEBUG: settingsButtonTapped - path after: \(state.path.count)")
         return .none
       
       case .selectChat(let id):
-        print("DEBUG: selectChat - path before: \(state.path.count)")
         guard let chat = state.chats[id: id] else { return .none }
         
         // Clean up OTHER empty chats before selecting this one
@@ -175,7 +170,6 @@ struct ChatList {
         // Replace the path with selected chat
         state.path.removeAll()
         state.path.append(.chat(chat))
-        print("DEBUG: selectChat - path after: \(state.path.count)")
         return .none
 
       case .chats:

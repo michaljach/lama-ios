@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import Foundation
+import UIKit
 
 enum ChatError: LocalizedError {
   case noAPIKey
@@ -143,7 +144,41 @@ private func streamGoogleAIMessage(
           let parts: [Part]
           
           struct Part: Codable {
-            let text: String
+            let text: String?
+            let inlineData: InlineData?
+            
+            enum CodingKeys: String, CodingKey {
+              case text
+              case inlineData = "inline_data"
+            }
+            
+            struct InlineData: Codable {
+              let mimeType: String
+              let data: String
+              
+              enum CodingKeys: String, CodingKey {
+                case mimeType = "mime_type"
+                case data
+              }
+            }
+            
+            init(text: String) {
+              self.text = text
+              self.inlineData = nil
+            }
+            
+            init(image: UIImage) {
+              self.text = nil
+              // Convert UIImage to JPEG data and base64 encode
+              if let imageData = image.jpegData(compressionQuality: 0.8) {
+                self.inlineData = InlineData(
+                  mimeType: "image/jpeg",
+                  data: imageData.base64EncodedString()
+                )
+              } else {
+                self.inlineData = nil
+              }
+            }
           }
         }
         
@@ -211,10 +246,25 @@ private func streamGoogleAIMessage(
         
         for message in messages {
           let googleRole = message.role == "user" ? "user" : "model"
+          var parts: [GoogleAIMessage.Part] = []
+          
+          // Add images first if present
+          for image in message.images {
+            parts.append(GoogleAIMessage.Part(image: image))
+          }
+          
+          // Add text content if not empty
+          if !message.content.isEmpty {
+            parts.append(GoogleAIMessage.Part(text: message.content))
+          }
+          
+          // Skip empty messages
+          guard !parts.isEmpty else { continue }
+          
           googleMessages.append(
             GoogleAIMessage(
               role: googleRole,
-              parts: [GoogleAIMessage.Part(text: message.content)]
+              parts: parts
             )
           )
         }
@@ -234,7 +284,6 @@ private func streamGoogleAIMessage(
         
         request.httpBody = try JSONEncoder().encode(googleRequest)
         
-        print("📤 Streaming request to: \(url.absoluteString.prefix(80))...")
         
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
         
@@ -242,7 +291,6 @@ private func streamGoogleAIMessage(
           throw ChatError.invalidResponse
         }
         
-        print("📥 Streaming response status: \(httpResponse.statusCode)")
         
         if httpResponse.statusCode != 200 {
           throw ChatError.apiError("HTTP \(httpResponse.statusCode)")
@@ -336,7 +384,6 @@ private func streamGoogleAIMessage(
                 }
               }
             } catch {
-              print("⚠️ Failed to decode chunk: \(error)")
             }
           }
         }
@@ -345,10 +392,8 @@ private func streamGoogleAIMessage(
         continuation.yield(.complete(sources: allSources))
         continuation.finish()
         
-        print("✅ Stream completed with \(allSources.count) sources")
         
       } catch {
-        print("❌ Stream error: \(error)")
         continuation.finish(throwing: error)
       }
     }

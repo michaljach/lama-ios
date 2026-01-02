@@ -7,12 +7,28 @@
 
 import ComposableArchitecture
 import Foundation
+import UIKit
 
 // Helper struct for API communication
 struct ChatMessage: Equatable, Identifiable {
   let id: UUID
   let role: String  // "user" or "assistant"
   let content: String
+  let images: [UIImage]  // Attached images for multimodal support
+  
+  init(id: UUID, role: String, content: String, images: [UIImage] = []) {
+    self.id = id
+    self.role = role
+    self.content = content
+    self.images = images
+  }
+  
+  static func == (lhs: ChatMessage, rhs: ChatMessage) -> Bool {
+    return lhs.id == rhs.id &&
+           lhs.role == rhs.role &&
+           lhs.content == rhs.content &&
+           lhs.images.count == rhs.images.count
+  }
 }
 
 @Reducer
@@ -70,9 +86,9 @@ struct Chat {
       switch action {
       case .messageInput(.delegate(.sendMessage)):
         let messageText = state.messageInputState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !messageText.isEmpty else { return .none }
+        let messageImages = state.messageInputState.selectedImages
+        guard !messageText.isEmpty || !messageImages.isEmpty else { return .none }
         
-        print("[ChatReducer] sendMessage delegate received. text='\(messageText)' model='\(state.modelPickerState.selectedModel)' messagesCount=\(state.messages.count)")
         
         let webSearchEnabled = UserDefaults.standard.bool(forKey: "webSearchEnabled")
         state.isLoading = true
@@ -82,9 +98,14 @@ struct Chat {
         let userMessage = Message.State(
           id: UUID(),
           role: .user,
-          content: messageText
+          content: messageText,
+          images: messageImages
         )
         state.messages.append(userMessage)
+        
+        // Clear input after adding to messages
+        state.messageInputState.inputText = ""
+        state.messageInputState.selectedImages = []
         
         // Create placeholder assistant message for streaming
         let assistantMessageId = UUID()
@@ -101,7 +122,8 @@ struct Chat {
           ChatMessage(
             id: msg.id,
             role: msg.role == .user ? "user" : "assistant",
-            content: msg.content
+            content: msg.content,
+            images: msg.images
           )
         }
         
@@ -109,7 +131,6 @@ struct Chat {
           await send(.messageSent(messageText))
           do {
             let webSearchEnabled = UserDefaults.standard.bool(forKey: "webSearchEnabled")
-            print("[ChatReducer] 🎬 Starting stream with messages=\(messages.count) model='\(model)' webSearch=\(webSearchEnabled)")
             let stream = chatService.streamMessage(messages, model, 0.7, 8192, webSearchEnabled)
             
             for try await event in stream {
@@ -123,7 +144,6 @@ struct Chat {
               }
             }
           } catch {
-            print("[ChatReducer] ❌ Stream error: \(error.localizedDescription)")
             await send(.messageError(error.localizedDescription))
           }
         }
@@ -173,7 +193,6 @@ struct Chat {
           await send(.messageSent(message))
           do {
             let webSearchEnabled = UserDefaults.standard.bool(forKey: "webSearchEnabled")
-            print("[ChatReducer] 🎬 Starting stream (explicit) with messages=\(messages.count) model='\(model)' webSearch=\(webSearchEnabled)")
             let stream = chatService.streamMessage(messages, model, 0.7, 8192, webSearchEnabled)
             
             for try await event in stream {
@@ -187,7 +206,6 @@ struct Chat {
               }
             }
           } catch {
-            print("[ChatReducer] ❌ Stream error (explicit): \(error.localizedDescription)")
             await send(.messageError(error.localizedDescription))
           }
         }
@@ -199,7 +217,6 @@ struct Chat {
       case .streamToken(let token, let messageId):
         // Append token to the assistant message
         guard var message = state.messages[id: messageId] else {
-          print("[ChatReducer] ⚠️ Cannot find message with id=\(messageId)")
           return .none
         }
         message.content += token
@@ -209,14 +226,12 @@ struct Chat {
       case .streamComplete(let sources, let messageId):
         // Add sources to the assistant message and stop loading
         guard var message = state.messages[id: messageId] else {
-          print("[ChatReducer] ⚠️ Cannot find message with id=\(messageId) for completion")
           return .none
         }
         message.sources = sources
         state.messages[id: messageId] = message
         state.isLoading = false
         state.loadingState = .idle
-        print("[ChatReducer] ✅ Stream complete with \(sources.count) sources")
         return .none
         
       case .messageError(let error):

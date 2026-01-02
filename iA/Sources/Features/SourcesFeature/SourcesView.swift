@@ -122,7 +122,6 @@ struct FaviconView: View {
     if let baseURL = URL(string: url),
        let host = baseURL.host,
        !host.contains("vertexaisearch.cloud.google.com") {
-      print("✅ FaviconView: Direct domain extracted: \(host)")
       actualDomain = host
       return
     }
@@ -130,12 +129,10 @@ struct FaviconView: View {
     // If it's a Google redirect URL, follow it to get actual domain
     guard let redirectURL = URL(string: url),
           redirectURL.host?.contains("vertexaisearch.cloud.google.com") == true else {
-      print("⚠️ FaviconView: Cannot parse URL: \(url)")
       actualDomain = "google.com" // Fallback
       return
     }
     
-    print("🔍 FaviconView: Resolving redirect for \(url)")
     
     do {
       var request = URLRequest(url: redirectURL)
@@ -149,14 +146,11 @@ struct FaviconView: View {
          let actualURL = URL(string: location),
          let host = actualURL.host {
         let cleanHost = host.replacingOccurrences(of: "www.", with: "")
-        print("✅ FaviconView: Resolved to \(cleanHost)")
         actualDomain = cleanHost
       } else {
-        print("⚠️ FaviconView: No redirect found, using Google")
         actualDomain = "google.com"
       }
     } catch {
-      print("❌ FaviconView: Failed to resolve redirect: \(error.localizedDescription)")
       actualDomain = "google.com"
     }
   }
