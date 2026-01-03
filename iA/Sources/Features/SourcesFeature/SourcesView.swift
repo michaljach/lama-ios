@@ -15,21 +15,21 @@ struct SourcesBarView: View {
   
   var body: some View {
     Button(action: onTap) {
-      HStack(spacing: 8) {
+      HStack {
         Image(systemName: "globe")
+          .font(.subheadline)
+          .foregroundColor(.secondary)
+        
+        Text("\(sources.count) source\(sources.count == 1 ? "" : "s")")
           .font(.caption)
           .foregroundColor(.secondary)
         
         // Show favicons for first few sources
         HStack(spacing: -4) {
-          ForEach(sources.prefix(5)) { source in
+          ForEach(sources.prefix(10)) { source in
             FaviconView(url: source.url)
           }
         }
-        
-        Text("\(sources.count) source\(sources.count == 1 ? "" : "s")")
-          .font(.caption)
-          .foregroundColor(.secondary)
         
         Spacer()
         
@@ -63,9 +63,6 @@ struct FaviconView: View {
   
   var body: some View {
     ZStack {
-      Circle()
-        .fill(Color.white)
-      
       if let faviconURL = faviconURL {
         AsyncImage(url: faviconURL) { phase in
           switch phase {
@@ -73,7 +70,7 @@ struct FaviconView: View {
             image
               .resizable()
               .aspectRatio(contentMode: .fit)
-              .frame(width: 16, height: 16)
+              .frame(width: 20, height: 20)
           case .failure:
             Image(systemName: "globe")
               .resizable()
@@ -91,6 +88,7 @@ struct FaviconView: View {
               .foregroundColor(.secondary)
           }
         }
+        .clipShape(Circle())
       } else if isResolvingDomain {
         ProgressView()
           .scaleEffect(0.5)
@@ -103,10 +101,6 @@ struct FaviconView: View {
       }
     }
     .frame(width: 20, height: 20)
-    .overlay(
-      Circle()
-        .stroke(Color.secondary.opacity(0.2), lineWidth: 0.5)
-    )
     .task {
       await resolveDomain()
     }
@@ -175,9 +169,12 @@ struct SourcesDetailSheet: View {
                   .foregroundColor(.primary)
                   .lineLimit(2)
                 
-                Text(extractDomain(from: source.url))
-                  .font(.caption)
-                  .foregroundColor(.secondary)
+                if let preview = source.preview {
+                  Text(preview)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                }
               }
               
               Spacer()
@@ -205,17 +202,11 @@ struct SourcesDetailSheet: View {
     }
     .presentationDragIndicator(.visible)
   }
-  
-  private func extractDomain(from urlString: String) -> String {
-    guard let url = URL(string: urlString),
-          let host = url.host else {
-      return urlString
-    }
-    return host.replacingOccurrences(of: "www.", with: "")
-  }
 }
 
 #Preview {
+  SourcesBarView(sources: [WebSource(title: "Test", url: "")]) {}
+  
   SourcesDetailSheet(
     store: Store(initialState: Sources.State(
       sources: [

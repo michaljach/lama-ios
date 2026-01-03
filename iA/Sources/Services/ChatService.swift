@@ -53,11 +53,13 @@ struct WebSource: Equatable, Codable, Identifiable {
   let id: UUID
   let title: String
   let url: String
+  let preview: String?
   
-  init(id: UUID = UUID(), title: String, url: String) {
+  init(id: UUID = UUID(), title: String, url: String, preview: String? = nil) {
     self.id = id
     self.title = title
     self.url = url
+    self.preview = preview
   }
 }
 
@@ -322,10 +324,12 @@ private func streamGoogleAIMessage(
             struct GroundingMetadata: Codable {
               let groundingChunks: [GroundingChunk]?
               let webSearchQueries: [String]?
+              let groundingSupports: [GroundingSupport]?
               
               enum CodingKeys: String, CodingKey {
                 case groundingChunks = "groundingChunks"
                 case webSearchQueries = "webSearchQueries"
+                case groundingSupports = "groundingSupports"
               }
               
               struct GroundingChunk: Codable {
@@ -334,6 +338,36 @@ private func streamGoogleAIMessage(
                 struct WebChunk: Codable {
                   let uri: String?
                   let title: String?
+                  
+                  // Log all fields to see what's available
+                  private enum CodingKeys: String, CodingKey {
+                    case uri
+                    case title
+                  }
+                }
+              }
+              
+              struct GroundingSupport: Codable {
+                let segment: Segment?
+                let groundingChunkIndices: [Int]?
+                let confidenceScores: [Double]?
+                
+                enum CodingKeys: String, CodingKey {
+                  case segment
+                  case groundingChunkIndices = "groundingChunkIndices"
+                  case confidenceScores = "confidenceScores"
+                }
+                
+                struct Segment: Codable {
+                  let text: String?
+                  let startIndex: Int?
+                  let endIndex: Int?
+                  
+                  enum CodingKeys: String, CodingKey {
+                    case text
+                    case startIndex = "startIndex"
+                    case endIndex = "endIndex"
+                  }
                 }
               }
             }
@@ -372,11 +406,29 @@ private func streamGoogleAIMessage(
                  let candidate = candidates.first,
                  let groundingMetadata = candidate.groundingMetadata,
                  let chunks = groundingMetadata.groundingChunks {
-                for chunk in chunks {
+                
+                // Build a map of chunk index to preview text from groundingSupports
+                var chunkPreviews: [Int: String] = [:]
+                if let supports = groundingMetadata.groundingSupports {
+                  for support in supports {
+                    if let indices = support.groundingChunkIndices,
+                       let text = support.segment?.text {
+                      // Associate this preview text with all chunk indices it references
+                      for index in indices {
+                        if chunkPreviews[index] == nil {
+                          chunkPreviews[index] = text
+                        }
+                      }
+                    }
+                  }
+                }
+                
+                for (index, chunk) in chunks.enumerated() {
                   if let web = chunk.web,
                      let uri = web.uri,
                      let title = web.title {
-                    let source = WebSource(title: title, url: uri)
+                    let preview = chunkPreviews[index]
+                    let source = WebSource(title: title, url: uri, preview: preview)
                     if !allSources.contains(where: { $0.url == uri }) {
                       allSources.append(source)
                     }
