@@ -12,13 +12,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		827952AC2EB56B760073D4C9 /* iA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iA.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		827952AC2EB56B760073D4C9 /* Ai.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ai.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		827952AE2EB56B760073D4C9 /* iA */ = {
+		827952AE2EB56B760073D4C9 /* Ai */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = iA;
+			path = Ai;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -39,7 +39,7 @@
 		827952A32EB56B760073D4C9 = {
 			isa = PBXGroup;
 			children = (
-				827952AE2EB56B760073D4C9 /* iA */,
+				827952AE2EB56B760073D4C9 /* Ai */,
 				827952AD2EB56B760073D4C9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -47,7 +47,7 @@
 		827952AD2EB56B760073D4C9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				827952AC2EB56B760073D4C9 /* iA.app */,
+				827952AC2EB56B760073D4C9 /* Ai.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,9 +55,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		827952AB2EB56B760073D4C9 /* iA */ = {
+		827952AB2EB56B760073D4C9 /* Ai */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 827952B72EB56B780073D4C9 /* Build configuration list for PBXNativeTarget "iA" */;
+			buildConfigurationList = 827952B72EB56B780073D4C9 /* Build configuration list for PBXNativeTarget "Ai" */;
 			buildPhases = (
 				827952A82EB56B760073D4C9 /* Sources */,
 				827952A92EB56B760073D4C9 /* Frameworks */,
@@ -68,15 +68,15 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				827952AE2EB56B760073D4C9 /* iA */,
+				827952AE2EB56B760073D4C9 /* Ai */,
 			);
-			name = iA;
+			name = Ai;
 			packageProductDependencies = (
 				827952BB2EB56CB90073D4C9 /* ComposableArchitecture */,
 				82E1DC822EC528C300EBED58 /* MarkdownUI */,
 			);
 			productName = lama;
-			productReference = 827952AC2EB56B760073D4C9 /* iA.app */;
+			productReference = 827952AC2EB56B760073D4C9 /* Ai.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -94,7 +94,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 827952A72EB56B760073D4C9 /* Build configuration list for PBXProject "iA" */;
+			buildConfigurationList = 827952A72EB56B760073D4C9 /* Build configuration list for PBXProject "Ai" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -112,7 +112,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				827952AB2EB56B760073D4C9 /* iA */,
+				827952AB2EB56B760073D4C9 /* Ai */,
 			);
 		};
 /* End PBXProject section */
@@ -334,7 +334,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		827952A72EB56B760073D4C9 /* Build configuration list for PBXProject "iA" */ = {
+		827952A72EB56B760073D4C9 /* Build configuration list for PBXProject "Ai" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				827952B52EB56B780073D4C9 /* Debug */,
@@ -343,7 +343,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		827952B72EB56B780073D4C9 /* Build configuration list for PBXNativeTarget "iA" */ = {
+		827952B72EB56B780073D4C9 /* Build configuration list for PBXNativeTarget "Ai" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				827952B82EB56B780073D4C9 /* Debug */,

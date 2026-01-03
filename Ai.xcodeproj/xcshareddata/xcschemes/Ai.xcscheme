@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "827952AB2EB56B760073D4C9"
-               BuildableName = "iA.app"
-               BlueprintName = "iA"
-               ReferencedContainer = "container:iA.xcodeproj">
+               BuildableName = "Ai.app"
+               BlueprintName = "Ai"
+               ReferencedContainer = "container:Ai.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "827952AB2EB56B760073D4C9"
-            BuildableName = "iA.app"
-            BlueprintName = "iA"
-            ReferencedContainer = "container:iA.xcodeproj">
+            BuildableName = "Ai.app"
+            BlueprintName = "Ai"
+            ReferencedContainer = "container:Ai.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "827952AB2EB56B760073D4C9"
-            BuildableName = "iA.app"
-            BlueprintName = "iA"
-            ReferencedContainer = "container:iA.xcodeproj">
+            BuildableName = "Ai.app"
+            BlueprintName = "Ai"
+            ReferencedContainer = "container:Ai.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
