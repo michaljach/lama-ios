@@ -83,6 +83,7 @@ struct ChatView: View {
               .id("loading-indicator")
             }
           }
+          .padding(.top)
           .scrollTargetLayout()
           .onChange(of: store.messages.count) { _, newCount in
             // Scroll to bottom when new message arrives
@@ -125,14 +126,87 @@ struct ChatView: View {
 
 
 #Preview {
-  ChatView(
-    store: Store(initialState: {
-      var state = Chat.State(
-        id: UUID()
-      )
-      return state
-    }()) {
-      Chat()
-    }
-  )
+  NavigationView {
+    ChatView(
+      store: Store(initialState: {
+        var state = Chat.State(
+          id: UUID()
+        )
+        
+        // Add example messages
+        state.messages = [
+          Message.State(
+            id: UUID(),
+            role: .user,
+            content: "What is SwiftUI?"
+          ),
+          Message.State(
+            id: UUID(),
+            role: .assistant,
+            content: """
+          **SwiftUI** is Apple's modern framework for building user interfaces across all Apple platforms.
+          
+          ## Key Features
+          
+          • **Declarative syntax** - Describe what your UI should look like
+          • **Cross-platform** - Works on iOS, macOS, watchOS, and tvOS
+          • **Live previews** - See changes instantly as you code
+          • **Built-in animations** - Smooth transitions with minimal code
+          
+          ### Example Code
+          
+          ```swift
+          struct ContentView: View {
+              var body: some View {
+                  Text("Hello, SwiftUI!")
+                      .font(.title)
+                      .foregroundColor(.blue)
+              }
+          }
+          ```
+          
+          It replaces UIKit and AppKit with a more modern, Swift-first approach to UI development.
+          """
+          ),
+          Message.State(
+            id: UUID(),
+            role: .user,
+            content: "How do I create a list?"
+          ),
+          Message.State(
+            id: UUID(),
+            role: .assistant,
+            content: """
+          Creating a list in SwiftUI is straightforward using the `List` view:
+          
+          ```swift
+          struct FruitList: View {
+              let fruits = ["Apple", "Banana", "Orange"]
+              
+              var body: some View {
+                  List(fruits, id: \\.self) { fruit in
+                      Text(fruit)
+                  }
+              }
+          }
+          ```
+          
+          You can also use `ForEach` for more control over the list items.
+          """,
+            sources: [
+              WebSource(
+                title: "Apple Developer Documentation",
+                url: "https://developer.apple.com/documentation/swiftui/list",
+                preview: "A container that presents rows of data arranged in a single column, optionally providing the ability to select one or more members."
+              )
+            ]
+          )
+        ]
+        
+        return state
+      }()) {
+        Chat()
+      }
+    )
+  }
 }

@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="images/logo.jpg" alt="iA Logo" width="80" height="80" style="display: inline-block; margin-right: 20px; vertical-align: middle;" />
-  <h1 style="display: inline-block; vertical-align: middle;">iA - AI Chat</h1>
+  <img src="images/logo.jpg" alt="Ai Logo" width="80" height="80" style="display: inline-block; margin-right: 20px; vertical-align: middle;" />
+  <h1 style="display: inline-block; vertical-align: middle;">Ai - AI Chat</h1>
 </div>
 
 A modern iOS chat application built with SwiftUI and The Composable Architecture that connects to [Google AI (Gemini)](https://ai.google.dev/) for AI-powered conversations with multimodal capabilities.
@@ -8,7 +8,7 @@ A modern iOS chat application built with SwiftUI and The Composable Architecture
 ## Preview
 
 <div align="center">
-  <img src="images/preview.png" alt="iA App Preview" width="280" />
+  <img src="images/preview.png" alt="Ai App Preview" width="280" />
 </div>
 
 ## Features
@@ -44,7 +44,7 @@ A modern iOS chat application built with SwiftUI and The Composable Architecture
 2. Open the project in Xcode:
 
    ```bash
-   open iA.xcodeproj
+   open Ai.xcodeproj
    ```
 
 3. Build and run the project in Xcode (⌘R)
@@ -110,7 +110,7 @@ Built with **The Composable Architecture (TCA)** for predictable state managemen
 ### Project Structure
 
 ```
-iA/
+Ai/
 ├── Sources/
 │   ├── Features/
 │   │   ├── ChatFeature/           # Chat conversation with streaming
@@ -161,7 +161,7 @@ Main Swift Package Manager dependencies:
 
 ```bash
 # Build the project
-xcodebuild -project iA.xcodeproj -scheme Ai -destination 'platform=macOS'
+xcodebuild -project Ai.xcodeproj -scheme Ai -destination 'platform=macOS'
 
 # Or build in Xcode (⌘B)
 ```

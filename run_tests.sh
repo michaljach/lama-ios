@@ -1,14 +1,14 @@
 #!/bin/bash
-# Test runner for iA tests
+# Test runner for Ai tests
 # This script validates and reports on the test suite
 
 set -e
 
 PROJECT_DIR="/Users/jach/dev/lama"
-TEST_DIR="$PROJECT_DIR/iATests"
+TEST_DIR="$PROJECT_DIR/AiTests"
 
 echo "═══════════════════════════════════════════════════════════"
-echo "iA Test Suite"
+echo "Ai Test Suite"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
