@@ -25,7 +25,7 @@ struct MessageView: View {
                   .resizable()
                   .scaledToFit()
                   .frame(maxWidth: 200)
-                  .cornerRadius(12)
+                  .cornerRadius(18)
               }
             }
             
@@ -37,7 +37,7 @@ struct MessageView: View {
                 .padding(.vertical, 12)
                 .padding(.horizontal, 16)
                 .background(Color.colorGray)
-                .clipShape(RoundedRectangle(cornerRadius: 22))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
             }
             
             // Resend button
@@ -74,9 +74,14 @@ struct MessageView: View {
             }
             .markdownBlockStyle(\.codeBlock) { configuration in
               configuration.label
-//                .padding()
+                .markdownTextStyle {
+                  FontFamilyVariant(.monospaced)
+                  FontSize(.em(0.85))
+                }
+                .padding()
                 .background(Color.colorGray)
-                .cornerRadius(8)
+                .cornerRadius(18)
+                .padding(.bottom)
             }
             .markdownTableBorderStyle(
               .init(
@@ -150,7 +155,7 @@ struct MessageView: View {
         content: """
         Here's a simple SwiftUI example:
         
-        ```swift
+        ```
         struct ContentView: View {
             var body: some View {
                 Text("Hello, World!")
