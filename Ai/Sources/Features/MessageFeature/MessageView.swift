@@ -55,7 +55,7 @@ struct MessageView: View {
                 .foregroundColor(.colorBlue)
                 .padding(.vertical, 6)
                 .padding(.horizontal, 12)
-                .background(Color.colorBlue.opacity(0.1))
+                .background(.colorGray)
                 .cornerRadius(8)
               }
             }
@@ -70,12 +70,12 @@ struct MessageView: View {
             }
             .markdownTextStyle(\.code) {
               FontFamilyVariant(.monospaced)
-              BackgroundColor(Color.colorForeground.opacity(0.08))
+              BackgroundColor(.colorGray)
             }
             .markdownBlockStyle(\.codeBlock) { configuration in
               configuration.label
-                .padding()
-                .background(Color.colorForeground.opacity(0.08))
+//                .padding()
+                .background(Color.colorGray)
                 .cornerRadius(8)
             }
             .markdownTableBorderStyle(
@@ -138,6 +138,30 @@ struct MessageView: View {
           WebSource(title: "Another Source", url: "https://apple.com"),
           WebSource(title: "Third Source", url: "https://google.com")
         ]
+      )) {
+        Message()
+      }
+    )
+    
+    MessageView(
+      store: Store(initialState: Message.State(
+        id: UUID(),
+        role: .assistant,
+        content: """
+        Here's a simple SwiftUI example:
+        
+        ```swift
+        struct ContentView: View {
+            var body: some View {
+                Text("Hello, World!")
+                    .font(.title)
+                    .foregroundColor(.blue)
+            }
+        }
+        ```
+        
+        This creates a text view with title font and blue color.
+        """
       )) {
         Message()
       }
