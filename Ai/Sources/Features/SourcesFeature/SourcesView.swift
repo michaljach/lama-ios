@@ -41,7 +41,7 @@ struct SourcesBarView: View {
       .padding(.horizontal, 12)
       .padding(.vertical, 8)
       .background(Color.colorGray)
-      .cornerRadius(8)
+      .cornerRadius(22)
     }
     .buttonStyle(.plain)
   }

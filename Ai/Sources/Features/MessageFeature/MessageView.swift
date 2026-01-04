@@ -25,7 +25,7 @@ struct MessageView: View {
                   .resizable()
                   .scaledToFit()
                   .frame(maxWidth: 200)
-                  .cornerRadius(18)
+                  .cornerRadius(22)
               }
             }
             
@@ -37,7 +37,7 @@ struct MessageView: View {
                 .padding(.vertical, 12)
                 .padding(.horizontal, 16)
                 .background(Color.colorGray)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .clipShape(RoundedRectangle(cornerRadius: 22))
             }
             
             // Resend button
@@ -80,8 +80,8 @@ struct MessageView: View {
                 }
                 .padding()
                 .background(Color.colorGray)
-                .cornerRadius(18)
-                .padding(.bottom)
+                .cornerRadius(22)
+                .padding(.vertical)
             }
             .markdownTableBorderStyle(
               .init(
